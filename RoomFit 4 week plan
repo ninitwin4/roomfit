@@ -1,0 +1,14 @@
+==========================
+RoomFit - Revised 4 week Plan 
+==========================
+Week 1 — Foundations (local)
+Data model (shared room schema + preference model), 5-factor ranking engine, seed 10–15 rooms, basic React UI. Runs end-to-end locally, no auth yet.
+
+Week 2 — Auth, DB & deploy
+Wire Supabase (Postgres + auth), load seed rooms into DB, add login. Deploy React → Vercel, FastAPI /rank → Render. Live and matching by week's end.
+
+Week 3 — User listings + real testers
+Add "create listing" CRUD (single role: everyone matches + lists). Your 3 pod testers sign up, add rooms, run matches. Collect feedback, fix top issues.
+
+Week 4 — Polish + Demo Day
+Match-explanation polish, mobile spacing, empty states. Prep pitch. (Stretch if early: LLM "why," roommate-takeover.)
