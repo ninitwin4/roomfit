@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: roomfit-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      # Set this to your Vercel URL once the frontend is deployed.
+      - key: ALLOWED_ORIGINS
+        sync: false

@@ -1,0 +1,17 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# node
+node_modules/
+dist/
+
+# env — Supabase keys land here in Week 2. Never commit these.
+.env
+.env.local
+*.env
+
+# os
+.DS_Store

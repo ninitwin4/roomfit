@@ -39,6 +39,18 @@ class Preferences(BaseModel):
     smoking_ok: bool = False           # hard filter: I'm fine with a smoking home
 
 
+class RankRequest(BaseModel):
+    """What the frontend POSTs to /rank.
+
+    The frontend reads rooms from Supabase (so the backend needs no DB
+    credentials and stays stateless). If `rooms` is omitted, the API falls
+    back to the local seed file — handy for curl and for local dev.
+    """
+
+    preferences: Preferences
+    rooms: Optional[list["Room"]] = None
+
+
 class FactorScore(BaseModel):
     factor: str
     score: int

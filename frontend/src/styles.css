@@ -1,0 +1,408 @@
+/* ---------------------------------------------------------------------------
+   roomfit — design tokens
+
+   Direction: a room brief, not a listings feed. Pale sage paper, deep pine ink,
+   and a single scoring ramp (green -> amber -> clay) that carries all the
+   meaning. The signature element is the "fit receipt": the score breakdown that
+   shows *why* a room ranked where it did. Everything else stays quiet.
+--------------------------------------------------------------------------- */
+
+:root {
+  --paper: #f1f3f1;
+  --card: #ffffff;
+  --ink: #16231e;
+  --ink-soft: #63736d;
+  --line: #dee3df;
+
+  /* scoring ramp — the only colors that carry meaning */
+  --fit-high: #2f6f4e;
+  --fit-mid: #c08a2e;
+  --fit-low: #a8564a;
+
+  --display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --body: "Karla", ui-sans-serif, system-ui, sans-serif;
+  --data: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius: 10px;
+  --pad: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px var(--pad) 64px;
+}
+
+/* --- masthead ------------------------------------------------------------ */
+.masthead {
+  margin-bottom: 24px;
+}
+
+.wordmark {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.tagline {
+  color: var(--ink-soft);
+  margin: 4px 0 0;
+  font-size: 15px;
+}
+
+/* --- form ---------------------------------------------------------------- */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--pad);
+}
+
+.field {
+  margin-bottom: 18px;
+}
+
+.field:last-of-type {
+  margin-bottom: 22px;
+}
+
+.field > label,
+.field > .field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.hint {
+  display: block;
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+input[type="number"],
+input[type="text"],
+select {
+  width: 100%;
+  padding: 11px 12px;
+  font-family: var(--body);
+  font-size: 16px; /* 16px keeps iOS from zooming on focus */
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+/* the 1-5 pickers: five taps, no sliders (sliders are fiddly on phones) */
+.scale {
+  display: flex;
+  gap: 6px;
+}
+
+.scale button {
+  flex: 1;
+  padding: 10px 0;
+  font-family: var(--data);
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.scale button[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.scale-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--fit-high);
+}
+
+.submit {
+  width: 100%;
+  padding: 14px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  color: var(--paper);
+  background: var(--ink);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.linkish {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--body);
+  font-size: 14px;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* --- results ------------------------------------------------------------- */
+.results-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 14px;
+}
+
+.results-count {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.filtered-note {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: -6px 0 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--pad);
+  margin-bottom: 12px;
+}
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.room-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+}
+
+.room-meta {
+  font-family: var(--data);
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+/* the score: the number is the point, so it gets the mono weight */
+.score {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.score-num {
+  font-family: var(--data);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1;
+  display: block;
+}
+
+.score-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+/* --- the fit receipt: signature element ---------------------------------- */
+.receipt {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.factor {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.factor:last-child {
+  margin-bottom: 0;
+}
+
+.factor-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.factor-pts {
+  font-family: var(--data);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.bar {
+  grid-column: 1 / -1;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--paper);
+  overflow: hidden;
+  margin: 2px 0 3px;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 260ms ease-out;
+}
+
+.factor-reason {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.toggle {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* --- states -------------------------------------------------------------- */
+.notice {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--fit-low);
+  border-radius: var(--radius);
+  padding: var(--pad);
+  font-size: 15px;
+}
+
+.notice p {
+  margin: 0 0 10px;
+}
+
+.notice p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- accessibility floor ------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* --- auth ---------------------------------------------------------------- */
+.signed-in {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 10px 0 0;
+}
+
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 11px 12px;
+  font-family: var(--body);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.auth-error,
+.auth-info {
+  font-size: 14px;
+  margin: 12px 0 0;
+}
+
+.auth-error {
+  color: var(--fit-low);
+}
+
+.auth-info {
+  color: var(--fit-high);
+}
+
+.auth-switch {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 16px 0 0;
+  text-align: center;
+}
