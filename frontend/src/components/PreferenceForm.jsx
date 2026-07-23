@@ -1,31 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { fetchLocations } from "../supabase.js";
 
 const SCALE_ENDS = {
   cleanliness_pref: ["Relaxed", "Spotless"],
   social_pref: ["Keep to myself", "Very social"],
 };
 
-function Scale({ name, value, onChange }) {
+// A 1–5 slider with a value bubble that rides above the thumb.
+function Scale({ name, value, onChange, labelId }) {
   const [low, high] = SCALE_ENDS[name];
+  const pct = ((value - 1) / 4) * 100; // 0..100 across the 1–5 range
   return (
-    <>
-      <div className="scale" role="group">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            type="button"
-            aria-pressed={value === n}
-            onClick={() => onChange(name, n)}
-          >
-            {n}
-          </button>
-        ))}
-      </div>
+    <div className="range-wrap" style={{ "--pct": pct }}>
+      <output className="range-bubble">{value}</output>
+      <input
+        type="range"
+        className="range"
+        min="1"
+        max="5"
+        step="1"
+        value={value}
+        aria-labelledby={labelId}
+        aria-valuetext={`${value} of 5`}
+        onChange={(e) => onChange(name, Number(e.target.value))}
+      />
       <div className="scale-ends">
         <span>{low}</span>
         <span>{high}</span>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -39,6 +42,29 @@ export default function PreferenceForm({ onSubmit, loading }) {
     needs_pets: false,
     smoking_ok: false,
   });
+
+  const [locations, setLocations] = useState([]);
+  const [locState, setLocState] = useState("loading"); // loading | ready | error
+
+  useEffect(() => {
+    let alive = true;
+    fetchLocations()
+      .then((list) => {
+        if (!alive) return;
+        setLocations(list);
+        setLocState("ready");
+        // keep the default valid: if "Mission" isn't in the list, use the first
+        setPrefs((p) =>
+          list.includes(p.location_pref)
+            ? p
+            : { ...p, location_pref: list[0] ?? p.location_pref }
+        );
+      })
+      .catch(() => alive && setLocState("error"));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const set = (key, value) => setPrefs((p) => ({ ...p, [key]: value }));
 
@@ -83,27 +109,59 @@ export default function PreferenceForm({ onSubmit, loading }) {
 
       <div className="field">
         <label htmlFor="location">Where you want to be</label>
-        <input
-          id="location"
-          type="text"
-          placeholder="Mission"
-          value={prefs.location_pref}
-          onChange={(e) => set("location_pref", e.target.value)}
-        />
+        {locState === "error" ? (
+          <>
+            <span className="hint">Couldn't load areas — type one instead.</span>
+            <input
+              id="location"
+              type="text"
+              placeholder="Mission"
+              value={prefs.location_pref}
+              onChange={(e) => set("location_pref", e.target.value)}
+            />
+          </>
+        ) : (
+          <select
+            id="location"
+            value={prefs.location_pref}
+            disabled={locState === "loading"}
+            onChange={(e) => set("location_pref", e.target.value)}
+          >
+            {locState === "loading" ? (
+              <option>Loading areas…</option>
+            ) : (
+              locations.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))
+            )}
+          </select>
+        )}
       </div>
 
       <div className="field">
-        <span className="field-label">How tidy you keep a place</span>
+        <span className="field-label" id="tidy-label">
+          How tidy you keep a place
+        </span>
         <Scale
           name="cleanliness_pref"
           value={prefs.cleanliness_pref}
           onChange={set}
+          labelId="tidy-label"
         />
       </div>
 
       <div className="field">
-        <span className="field-label">How social you want the home to be</span>
-        <Scale name="social_pref" value={prefs.social_pref} onChange={set} />
+        <span className="field-label" id="social-label">
+          How social you want the home to be
+        </span>
+        <Scale
+          name="social_pref"
+          value={prefs.social_pref}
+          onChange={set}
+          labelId="social-label"
+        />
       </div>
 
       <div className="field">

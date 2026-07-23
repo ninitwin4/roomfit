@@ -17,3 +17,14 @@ export async function fetchRooms() {
   if (error) throw new Error(`Couldn't load rooms: ${error.message}`);
   return data ?? [];
 }
+
+// Distinct neighborhoods, for the preference dropdown. Postgres has no cheap
+// DISTINCT through the JS client, so we dedupe the location column here. RLS
+// lets signed-in users read every room, so this covers seed + user listings.
+export async function fetchLocations() {
+  const { data, error } = await supabase.from("rooms").select("location");
+  if (error) throw new Error(`Couldn't load locations: ${error.message}`);
+  return [...new Set((data ?? []).map((r) => r.location))].sort((a, b) =>
+    a.localeCompare(b)
+  );
+}
