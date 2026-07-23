@@ -8,12 +8,40 @@ function rampColor(ratio) {
   return "var(--fit-low)";
 }
 
-export default function RoomCard({ ranked, defaultOpen = false }) {
+// Circular fit gauge — the score "pops" as a ring. Bigger for the top match.
+function Gauge({ score, hero }) {
+  const r = 44;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - score / 100);
+  const color = rampColor(score / 100);
+  return (
+    <div className={hero ? "gauge gauge-hero" : "gauge"}>
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle className="gauge-track" cx="50" cy="50" r={r} />
+        <circle
+          className="gauge-fill"
+          cx="50"
+          cy="50"
+          r={r}
+          style={{ stroke: color, strokeDasharray: circ, strokeDashoffset: offset }}
+        />
+      </svg>
+      <div className="gauge-label">
+        <span className="gauge-num" style={{ color }}>
+          {score}
+        </span>
+        <span className="gauge-cap">fit</span>
+      </div>
+    </div>
+  );
+}
+
+export default function RoomCard({ ranked, defaultOpen = false, hero = false }) {
   const [open, setOpen] = useState(defaultOpen);
   const { room, total_score, factors } = ranked;
 
   return (
-    <article className="card">
+    <article className={hero ? "card card-hero" : "card"}>
       <div className="card-top">
         <div>
           <h3 className="room-title">{room.title}</h3>
@@ -21,15 +49,7 @@ export default function RoomCard({ ranked, defaultOpen = false }) {
             ${room.rent}/mo · {room.location}
           </p>
         </div>
-        <div className="score">
-          <span
-            className="score-num"
-            style={{ color: rampColor(total_score / 100) }}
-          >
-            {total_score}
-          </span>
-          <span className="score-label">fit</span>
-        </div>
+        <Gauge score={total_score} hero={hero} />
       </div>
 
       {open && (
@@ -44,10 +64,7 @@ export default function RoomCard({ ranked, defaultOpen = false }) {
                 </span>
                 <div className="bar">
                   <span
-                    style={{
-                      width: `${ratio * 100}%`,
-                      background: rampColor(ratio),
-                    }}
+                    style={{ width: `${ratio * 100}%`, "--fill": rampColor(ratio) }}
                   />
                 </div>
                 <span className="factor-reason">{f.reason}</span>

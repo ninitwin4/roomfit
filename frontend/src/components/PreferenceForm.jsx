@@ -47,14 +47,38 @@ export default function PreferenceForm({ onSubmit, loading }) {
       <div className="field">
         <label htmlFor="budget">Monthly budget</label>
         <span className="hint">Rooms above this are ruled out entirely.</span>
-        <input
-          id="budget"
-          type="number"
-          min="0"
-          step="50"
-          value={prefs.budget_max}
-          onChange={(e) => set("budget_max", Number(e.target.value))}
-        />
+        <div className="budget-input">
+          <span className="budget-prefix" aria-hidden="true">
+            $
+          </span>
+          <input
+            id="budget"
+            type="number"
+            inputMode="numeric"
+            min="0"
+            step="50"
+            value={prefs.budget_max}
+            onChange={(e) => set("budget_max", Number(e.target.value))}
+          />
+          <div className="stepper">
+            <button
+              type="button"
+              aria-label="Increase budget by 50"
+              onClick={() => set("budget_max", prefs.budget_max + 50)}
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              aria-label="Decrease budget by 50"
+              onClick={() =>
+                set("budget_max", Math.max(0, prefs.budget_max - 50))
+              }
+            >
+              ▼
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="field">

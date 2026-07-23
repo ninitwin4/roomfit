@@ -153,7 +153,12 @@ export default function App() {
                 </div>
               ) : (
                 results.map((r, i) => (
-                  <RoomCard key={r.room.id} ranked={r} defaultOpen={i === 0} />
+                  <RoomCard
+                    key={r.room.id}
+                    ranked={r}
+                    defaultOpen={i === 0}
+                    hero={i === 0}
+                  />
                 ))
               )}
             </>
