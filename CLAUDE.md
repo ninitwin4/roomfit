@@ -99,10 +99,16 @@ render.yaml            backend deploy blueprint
 ## Status
 
 - ✅ **Week 1** — ranking engine, `/rank`, React fit-receipt UI, verified end to end
-- 🔄 **Session A** — Supabase schema, auth UI, and deploy config are written;
-  the runbook in `SESSION_A.md` has not been executed yet (no live URL yet)
-- ⬜ **Session B** — "add your room" form + "my listings" (edit/delete own only)
-- ⬜ **Testers** — 3 people, not yet recruited
+- ✅ **Session A** — LIVE. Supabase (schema + 12 seed rooms, email confirmation
+  off, RLS verified), backend on Render (`roomfit-api.onrender.com`), frontend on
+  Vercel (`roomfit-peach.vercel.app`), CORS locked to the Vercel origin. Sign up →
+  match → fit receipt works end to end.
+- ✅ **UI refresh** — clean white theme + single pine-green accent, and a signed-out
+  "Welcome to roomfit" hero. Chrome only; score ramp + fit receipt unchanged.
+- ⬜ **Session B** — "add your room" form + "my listings" (edit/delete own only).
+  RLS insert/update/delete policies already exist; this is frontend work.
+- ⬜ **Testers** — 3 people, not yet recruited (long-lead item — the live link is
+  ready to send).
 - ⬜ **Demo Day pitch** — not drafted
 
 ## Working style
