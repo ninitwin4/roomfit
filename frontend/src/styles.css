@@ -1,18 +1,25 @@
 /* ---------------------------------------------------------------------------
    roomfit — design tokens
 
-   Direction: a room brief, not a listings feed. Pale sage paper, deep pine ink,
-   and a single scoring ramp (green -> amber -> clay) that carries all the
-   meaning. The signature element is the "fit receipt": the score breakdown that
-   shows *why* a room ranked where it did. Everything else stays quiet.
+   Direction: a clean white brief with a single pine-green accent. The scoring
+   ramp (green -> amber -> clay) still carries all the meaning; the accent is
+   the same green as "high fit", tying the brand to a good match. The signature
+   element is the "fit receipt": the score breakdown that shows *why* a room
+   ranked where it did. Everything else stays quiet.
 --------------------------------------------------------------------------- */
 
 :root {
-  --paper: #f1f3f1;
+  --paper: #ffffff;
+  --surface: #fbfbfa;
   --card: #ffffff;
-  --ink: #16231e;
-  --ink-soft: #63736d;
-  --line: #dee3df;
+  --ink: #191c1a;
+  --ink-soft: #6b756e;
+  --line: #ececeb;
+
+  /* single accent — same value as --fit-high, so "good fit" reads everywhere */
+  --accent: #2f6f4e;
+  --accent-ink: #ffffff;
+  --shadow: 0 1px 2px rgba(20, 30, 25, 0.04), 0 1px 3px rgba(20, 30, 25, 0.06);
 
   /* scoring ramp — the only colors that carry meaning */
   --fit-high: #2f6f4e;
@@ -23,7 +30,8 @@
   --body: "Karla", ui-sans-serif, system-ui, sans-serif;
   --data: "JetBrains Mono", ui-monospace, monospace;
 
-  --radius: 10px;
+  --radius: 14px;
+  --radius-sm: 10px;
   --pad: 16px;
 }
 
@@ -47,9 +55,9 @@ body {
   padding: 24px var(--pad) 64px;
 }
 
-/* --- masthead ------------------------------------------------------------ */
+/* --- masthead (signed-in, compact) --------------------------------------- */
 .masthead {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .wordmark {
@@ -66,12 +74,87 @@ body {
   font-size: 15px;
 }
 
+/* --- hero (signed-out welcome) ------------------------------------------- */
+.hero {
+  min-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 0 20px;
+}
+
+.hero-eyebrow {
+  font-family: var(--data);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+}
+
+.hero-title {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 40px;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+
+.hero-lede {
+  color: var(--ink-soft);
+  font-size: 17px;
+  line-height: 1.45;
+  margin: 14px 0 0;
+  max-width: 34ch;
+}
+
+.value-props {
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.value-prop {
+  position: relative;
+  padding-left: 26px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.value-prop::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.value-prop strong {
+  font-weight: 600;
+}
+
+.scroll-cue {
+  margin: 30px 0 6px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+
 /* --- form ---------------------------------------------------------------- */
 .panel {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: var(--pad);
+  box-shadow: var(--shadow);
+  padding: 20px;
 }
 
 .field {
@@ -102,13 +185,13 @@ input[type="number"],
 input[type="text"],
 select {
   width: 100%;
-  padding: 11px 12px;
+  padding: 12px;
   font-family: var(--body);
   font-size: 16px; /* 16px keeps iOS from zooming on focus */
   color: var(--ink);
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 /* the 1-5 pickers: five taps, no sliders (sliders are fiddly on phones) */
@@ -119,21 +202,22 @@ select {
 
 .scale button {
   flex: 1;
-  padding: 10px 0;
+  padding: 11px 0;
   font-family: var(--data);
   font-weight: 500;
   font-size: 15px;
   color: var(--ink-soft);
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .scale button[aria-pressed="true"] {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .scale-ends {
@@ -172,10 +256,10 @@ select {
   font-weight: 700;
   font-size: 16px;
   letter-spacing: -0.01em;
-  color: var(--paper);
-  background: var(--ink);
+  color: var(--accent-ink);
+  background: var(--accent);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
@@ -190,8 +274,9 @@ select {
   padding: 0;
   font-family: var(--body);
   font-size: 14px;
-  color: var(--ink-soft);
+  color: var(--accent);
   text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
 }
 
@@ -222,6 +307,7 @@ select {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  box-shadow: var(--shadow);
   padding: var(--pad);
   margin-bottom: 12px;
 }
@@ -304,7 +390,7 @@ select {
   grid-column: 1 / -1;
   height: 5px;
   border-radius: 3px;
-  background: var(--paper);
+  background: var(--line);
   overflow: hidden;
   margin: 2px 0 3px;
 }
@@ -356,7 +442,7 @@ select {
 
 /* --- accessibility floor ------------------------------------------------- */
 :focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -377,13 +463,13 @@ select {
 input[type="email"],
 input[type="password"] {
   width: 100%;
-  padding: 11px 12px;
+  padding: 12px;
   font-family: var(--body);
   font-size: 16px;
   color: var(--ink);
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .auth-error,

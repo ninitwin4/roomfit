@@ -48,25 +48,52 @@ export default function App() {
 
   return (
     <main className="app">
-      <header className="masthead">
-        <h1 className="wordmark">roomfit</h1>
-        <p className="tagline">
-          Rooms ranked by how well they fit you — and the reason for every rank.
-        </p>
-        {session && (
-          <p className="signed-in">
-            {session.user.email}
-            {" · "}
-            <button
-              type="button"
-              className="linkish"
-              onClick={() => supabase.auth.signOut()}
-            >
-              Sign out
-            </button>
+      {!checkingAuth && !session ? (
+        <header className="hero">
+          <p className="hero-eyebrow">roomfit</p>
+          <h1 className="hero-title">Welcome to roomfit</h1>
+          <p className="hero-lede">
+            Rooms ranked by how well they actually fit you — with the receipt to
+            prove it.
           </p>
-        )}
-      </header>
+          <ul className="value-props">
+            <li className="value-prop">
+              Every match comes with a <strong>receipt</strong> — the five
+              factors behind its score.
+            </li>
+            <li className="value-prop">
+              See exactly <strong>why</strong> a room ranked where it did, not
+              just a number.
+            </li>
+            <li className="value-prop">
+              Set your budget and must-haves; we rule out dealbreakers and rank
+              the rest.
+            </li>
+          </ul>
+          <p className="scroll-cue">Sign in to start ↓</p>
+        </header>
+      ) : (
+        <header className="masthead">
+          <h1 className="wordmark">roomfit</h1>
+          <p className="tagline">
+            Rooms ranked by how well they fit you — and the reason for every
+            rank.
+          </p>
+          {session && (
+            <p className="signed-in">
+              {session.user.email}
+              {" · "}
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => supabase.auth.signOut()}
+              >
+                Sign out
+              </button>
+            </p>
+          )}
+        </header>
+      )}
 
       {checkingAuth ? null : !session ? (
         <Auth />
