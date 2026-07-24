@@ -105,8 +105,10 @@ render.yaml            backend deploy blueprint
   match → fit receipt works end to end.
 - ✅ **UI refresh** — clean white theme + single pine-green accent, and a signed-out
   "Welcome to roomfit" hero. Chrome only; score ramp + fit receipt unchanged.
-- ⬜ **Session B** — "add your room" form + "my listings" (edit/delete own only).
-  RLS insert/update/delete policies already exist; this is frontend work.
+- 🔄 **Session B** — BUILT, pending live test. Header tabs (Find a room / My
+  listings), add/edit room form, my-listings with edit + inline-confirm delete,
+  RLS-guarded write helpers in supabase.js. Verified visually; create/edit/delete
+  against the DB still need a signed-in end-to-end check on the live site.
 - ⬜ **Testers** — 3 people, not yet recruited (long-lead item — the live link is
   ready to send).
 - ⬜ **Demo Day pitch** — not drafted
