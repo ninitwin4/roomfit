@@ -1,36 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchLocations } from "../supabase.js";
-
-const SCALE_ENDS = {
-  cleanliness_pref: ["Relaxed", "Spotless"],
-  social_pref: ["Keep to myself", "Very social"],
-};
-
-// A 1–5 slider with a value bubble that rides above the thumb.
-function Scale({ name, value, onChange, labelId }) {
-  const [low, high] = SCALE_ENDS[name];
-  const pct = ((value - 1) / 4) * 100; // 0..100 across the 1–5 range
-  return (
-    <div className="range-wrap" style={{ "--pct": pct }}>
-      <output className="range-bubble">{value}</output>
-      <input
-        type="range"
-        className="range"
-        min="1"
-        max="5"
-        step="1"
-        value={value}
-        aria-labelledby={labelId}
-        aria-valuetext={`${value} of 5`}
-        onChange={(e) => onChange(name, Number(e.target.value))}
-      />
-      <div className="scale-ends">
-        <span>{low}</span>
-        <span>{high}</span>
-      </div>
-    </div>
-  );
-}
+import Scale from "./Scale.jsx";
 
 export default function PreferenceForm({ onSubmit, loading }) {
   const [prefs, setPrefs] = useState({
@@ -145,10 +115,11 @@ export default function PreferenceForm({ onSubmit, loading }) {
           How tidy you keep a place
         </span>
         <Scale
-          name="cleanliness_pref"
           value={prefs.cleanliness_pref}
-          onChange={set}
+          low="Relaxed"
+          high="Spotless"
           labelId="tidy-label"
+          onChange={(v) => set("cleanliness_pref", v)}
         />
       </div>
 
@@ -157,10 +128,11 @@ export default function PreferenceForm({ onSubmit, loading }) {
           How social you want the home to be
         </span>
         <Scale
-          name="social_pref"
           value={prefs.social_pref}
-          onChange={set}
+          low="Keep to myself"
+          high="Very social"
           labelId="social-label"
+          onChange={(v) => set("social_pref", v)}
         />
       </div>
 

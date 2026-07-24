@@ -28,3 +28,77 @@ export async function fetchLocations() {
     a.localeCompare(b)
   );
 }
+
+// --- listings (Session B) ---------------------------------------------------
+// All writes are guarded by RLS: users can only insert/update/delete rooms
+// where owner_id = auth.uid(). The frontend still sets owner_id explicitly so
+// the insert passes the policy's WITH CHECK.
+
+const ROOM_FIELDS =
+  "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id";
+
+async function currentUserId() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("You need to be signed in.");
+  return user.id;
+}
+
+// Only the columns a user may write. Strips id (generated always — can't be
+// updated), owner_id, and created_at so they can't be tampered with.
+const WRITABLE = [
+  "title",
+  "rent",
+  "location",
+  "cleanliness",
+  "social_level",
+  "sleep_schedule",
+  "pets_allowed",
+  "smoking_allowed",
+];
+
+function writable(room) {
+  const out = {};
+  for (const k of WRITABLE) if (k in room) out[k] = room[k];
+  return out;
+}
+
+// Rooms owned by the signed-in user (seed rooms have owner_id null, so excluded).
+export async function fetchMyRooms() {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("rooms")
+    .select(ROOM_FIELDS)
+    .eq("owner_id", uid)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`Couldn't load your listings: ${error.message}`);
+  return data ?? [];
+}
+
+export async function createRoom(room) {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("rooms")
+    .insert({ ...writable(room), owner_id: uid })
+    .select(ROOM_FIELDS)
+    .single();
+  if (error) throw new Error(`Couldn't save the room: ${error.message}`);
+  return data;
+}
+
+export async function updateRoom(id, room) {
+  const { data, error } = await supabase
+    .from("rooms")
+    .update(writable(room))
+    .eq("id", id)
+    .select(ROOM_FIELDS)
+    .single();
+  if (error) throw new Error(`Couldn't update the room: ${error.message}`);
+  return data;
+}
+
+export async function deleteRoom(id) {
+  const { error } = await supabase.from("rooms").delete().eq("id", id);
+  if (error) throw new Error(`Couldn't delete the room: ${error.message}`);
+}

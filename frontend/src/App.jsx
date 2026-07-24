@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import PreferenceForm from "./components/PreferenceForm.jsx";
 import RoomCard from "./components/RoomCard.jsx";
 import Auth from "./components/Auth.jsx";
+import MyListings from "./components/MyListings.jsx";
 import { rankRooms } from "./api.js";
 import { supabase, fetchRooms } from "./supabase.js";
 
 export default function App() {
   const [session, setSession] = useState(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [view, setView] = useState("find"); // "find" | "listings"
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -99,9 +101,30 @@ export default function App() {
         <Auth />
       ) : (
         <>
-          {!data && !error && (
-            <PreferenceForm onSubmit={handleSubmit} loading={loading} />
-          )}
+          <nav className="tabs">
+            <button
+              type="button"
+              className={view === "find" ? "tab active" : "tab"}
+              onClick={() => setView("find")}
+            >
+              Find a room
+            </button>
+            <button
+              type="button"
+              className={view === "listings" ? "tab active" : "tab"}
+              onClick={() => setView("listings")}
+            >
+              My listings
+            </button>
+          </nav>
+
+          {view === "listings" ? (
+            <MyListings />
+          ) : (
+            <>
+              {!data && !error && (
+                <PreferenceForm onSubmit={handleSubmit} loading={loading} />
+              )}
 
           {error && (
             <div className="notice">
@@ -161,6 +184,8 @@ export default function App() {
                   />
                 ))
               )}
+            </>
+          )}
             </>
           )}
         </>
