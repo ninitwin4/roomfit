@@ -109,8 +109,8 @@ render.yaml            backend deploy blueprint
   listings), add/edit room form, my-listings with edit + inline-confirm delete,
   RLS-guarded write helpers in supabase.js. Verified visually; create/edit/delete
   against the DB still need a signed-in end-to-end check on the live site.
-- ⬜ **Testers** — 3 people, not yet recruited (long-lead item — the live link is
-  ready to send).
+- ✅ **Testers** — 3 tester accounts exist in Supabase. Still to confirm: each
+  can add a listing + run a match end to end (gated on Session B being live).
 - ⬜ **Demo Day pitch** — not drafted
 
 ## Working style
