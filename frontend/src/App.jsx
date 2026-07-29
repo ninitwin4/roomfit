@@ -122,7 +122,17 @@ export default function App() {
             <MyListings />
           ) : (
             <>
-              {!data && !error && (
+              {loading && (
+                <div className="loading" role="status" aria-live="polite">
+                  <div className="spinner" aria-hidden="true" />
+                  <p className="loading-title">Finding your fit…</p>
+                  <p className="loading-sub">
+                    Ranking rooms by how well they match you.
+                  </p>
+                </div>
+              )}
+
+              {!loading && !data && !error && (
                 <PreferenceForm onSubmit={handleSubmit} loading={loading} />
               )}
 
@@ -139,7 +149,7 @@ export default function App() {
             </div>
           )}
 
-          {data && !error && (
+          {!loading && data && !error && (
             <>
               <div className="results-head">
                 <h2 className="results-count">

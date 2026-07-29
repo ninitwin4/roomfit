@@ -49,12 +49,13 @@ export default function PreferenceForm({ onSubmit, loading }) {
           </span>
           <input
             id="budget"
-            type="number"
+            type="text"
             inputMode="numeric"
-            min="0"
-            step="50"
             value={prefs.budget_max}
-            onChange={(e) => set("budget_max", Number(e.target.value))}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, "");
+              set("budget_max", digits === "" ? 0 : parseInt(digits, 10));
+            }}
           />
           <div className="stepper">
             <button

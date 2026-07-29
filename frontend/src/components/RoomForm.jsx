@@ -54,12 +54,13 @@ export default function RoomForm({ initial, onSave, onCancel, saving, error }) {
           </span>
           <input
             id="room-rent"
-            type="number"
+            type="text"
             inputMode="numeric"
-            min="0"
-            step="50"
             value={room.rent}
-            onChange={(e) => set("rent", Number(e.target.value))}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, "");
+              set("rent", digits === "" ? 0 : parseInt(digits, 10));
+            }}
           />
         </div>
       </div>

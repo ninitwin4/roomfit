@@ -148,6 +148,44 @@ body {
   color: var(--ink-soft);
 }
 
+/* --- loading (while a match is being ranked) ----------------------------- */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 64px 0;
+}
+
+.spinner {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 5px solid var(--line);
+  border-top-color: var(--accent);
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  margin: 22px 0 4px;
+}
+
+.loading-sub {
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin: 0;
+}
+
 /* --- tabs (signed-in nav) ------------------------------------------------ */
 .tabs {
   display: flex;
@@ -288,7 +326,7 @@ select {
   font-size: 16px;
 }
 
-.budget-input input[type="number"] {
+.budget-input input {
   flex: 1;
   width: auto;
   min-width: 0;
@@ -298,7 +336,7 @@ select {
   border-radius: 0;
 }
 
-.budget-input input[type="number"]:focus-visible {
+.budget-input input:focus-visible {
   outline: none;
 }
 
