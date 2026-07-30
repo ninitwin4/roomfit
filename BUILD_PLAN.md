@@ -52,18 +52,23 @@ allowed, smoking home when seeker isn't ok with it.
 reasons. ✅
 
 ### UI notes
-- **The fit receipt is the product.** Every card shows a 0–100 score and, on
-  tap, the five factors as bars with a plain-language reason each. The top
-  result opens expanded so the *why* is visible without a tap.
+- **The fit receipt is the product.** Every card shows its fit as a circular
+  0–100 gauge (the top match larger) and, on tap, the five factors as
+  slider-style bars with a plain-language reason each. The top result opens
+  expanded so the *why* is visible without a tap.
 - One color ramp (green ≥75% → amber ≥50% → clay below) carries both the total
   and each factor bar, so color always means the same thing.
-- 1–5 ratings are five tap targets, not a slider — sliders are miserable on
-  phones. Inputs are 16px so iOS doesn't zoom on focus.
+- 1–5 ratings are sliders with a value bubble above the thumb (updated from the
+  original five tap targets). Inputs are 16px so iOS doesn't zoom on focus.
 - Hard filters are surfaced honestly: "6 ruled out on budget, pets, or smoking."
+- Visual refresh: clean white theme with a single pine-green accent and a
+  signed-out "Welcome to roomfit" hero; a loading spinner covers the match wait.
 
-## Phase 2 / Session A — Supabase, auth & deploy — SCAFFOLDED
+## Phase 2 / Session A — Supabase, auth & deploy — LIVE
 
-Step-by-step runbook: **`SESSION_A.md`**.
+Live: frontend `roomfit-peach.vercel.app`, backend `roomfit-api.onrender.com`,
+Supabase (schema + 12 seed rooms, email confirmation off, RLS verified), CORS
+locked to the Vercel origin. Step-by-step runbook: **`SESSION_A.md`**.
 
 - [x] `supabase/01_schema.sql` — `rooms` table + Row Level Security (read all, write own)
 - [x] `supabase/02_seed_rooms.sql` — the same 12 rooms, `owner_id` null
@@ -78,14 +83,19 @@ Step-by-step runbook: **`SESSION_A.md`**.
 holds the Supabase session and sends rooms with the request, so `/rank` stays a
 pure scoring service with no credentials to leak and nothing to migrate.
 
-## Session B — user listings + testers
-- "Add your room" form writing to Supabase with `owner_id = auth.uid()`.
-- "My listings" view: edit / delete your own only (RLS already enforces this).
-- Testers sign up, add a room, run a match. Collect feedback, fix the top issue.
+## Session B — user listings + testers — LIVE
+- [x] "Add your room" form writing to Supabase with `owner_id = auth.uid()`.
+- [x] "My listings" view: edit / delete your own only (RLS already enforces this).
+- [x] Header tabs (Find a room / My listings); shared 1–5 sliders and `$` inputs.
+- [x] 3 testers signed up; create / edit / delete verified live.
+- [ ] Collect feedback, fix the top issue.
 
 ## Then — Demo Day
-- Pitch (start drafting in parallel, not at the end).
-- Polish: mobile spacing, empty states, warm the Render service before demoing.
+- [ ] Pitch — **not drafted yet** (the last open item).
+- [x] Polish shipped: white theme + welcome hero, circular fit gauges,
+      slider-style factor bars, loading spinner, money-input cleanup,
+      empty / error states.
+- [ ] Warm the Render service before demoing (free-tier cold start ~30s).
 
 ## Scoring reference
 
