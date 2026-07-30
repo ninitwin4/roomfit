@@ -11,8 +11,11 @@ const BLANK = {
   sleep_schedule: "flexible",
   pets_allowed: false,
   smoking_allowed: false,
-  photo_url: null,
+  photos: [],
 };
+
+// Raise this if rooms need more; the grid and the card gallery both adapt.
+const MAX_PHOTOS = 5;
 
 // Add or edit one room. `initial` is a room to edit, or null to add a new one.
 export default function RoomForm({ initial, onSave, onCancel, saving, error }) {
@@ -20,7 +23,6 @@ export default function RoomForm({ initial, onSave, onCancel, saving, error }) {
   const [areas, setAreas] = useState([]);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState(null);
-  const [preview, setPreview] = useState(null); // local blob URL, shown instantly
 
   useEffect(() => {
     let alive = true;
@@ -32,39 +34,52 @@ export default function RoomForm({ initial, onSave, onCancel, saving, error }) {
     };
   }, []);
 
-  // Revokes the previous blob URL whenever it changes, and on unmount.
-  useEffect(() => {
-    return () => {
-      if (preview) URL.revokeObjectURL(preview);
-    };
-  }, [preview]);
-
   const set = (key, value) => setRoom((r) => ({ ...r, [key]: value }));
   const valid = room.title.trim() && room.location.trim() && room.rent >= 0;
+  const photos = room.photos ?? [];
 
-  // Upload on select rather than on save, so by the time you hit Save the photo
-  // is just another string field. We deliberately don't delete the previous
-  // image here: if you replace a photo and then Cancel, the saved room would be
-  // left pointing at a deleted file. Orphans are ~200 KB; broken images aren't.
-  async function handlePhoto(e) {
-    const file = e.target.files?.[0];
+  // Upload on select rather than on save, so by the time you hit Save the
+  // photos are just an array of strings. Removing one here doesn't delete the
+  // stored file: if you removed a photo and then hit Cancel, the saved room
+  // would point at a deleted image. Orphans are ~200 KB; broken images aren't.
+  async function handlePhotos(e) {
+    const files = Array.from(e.target.files || []);
     e.target.value = ""; // allow re-picking the same file after a remove
-    if (!file) return;
+    if (!files.length) return;
+
+    const slots = MAX_PHOTOS - photos.length;
+    if (slots <= 0) {
+      setPhotoError(`You can add up to ${MAX_PHOTOS} photos.`);
+      return;
+    }
 
     setPhotoError(null);
-    setPreview(URL.createObjectURL(file));
     setPhotoBusy(true);
     try {
-      set("photo_url", await uploadRoomPhoto(file));
+      for (const file of files.slice(0, slots)) {
+        const url = await uploadRoomPhoto(file);
+        // append as each one finishes, so they appear progressively
+        setRoom((r) => ({ ...r, photos: [...(r.photos ?? []), url] }));
+      }
+      if (files.length > slots) {
+        setPhotoError(`Added ${slots} — that's the ${MAX_PHOTOS}-photo limit.`);
+      }
     } catch (err) {
       setPhotoError(err.message);
-      setPreview(null);
     } finally {
       setPhotoBusy(false);
     }
   }
 
-  const shownPhoto = preview || room.photo_url;
+  const makeCover = (i) =>
+    setRoom((r) => {
+      const next = [...r.photos];
+      const [picked] = next.splice(i, 1);
+      return { ...r, photos: [picked, ...next] };
+    });
+
+  const removePhoto = (i) =>
+    setRoom((r) => ({ ...r, photos: r.photos.filter((_, n) => n !== i) }));
 
   return (
     <div className="panel">
@@ -82,39 +97,56 @@ export default function RoomForm({ initial, onSave, onCancel, saving, error }) {
       </div>
 
       <div className="field">
-        <span className="field-label">Photo</span>
-        <span className="hint">One cover photo. Optional.</span>
+        <span className="field-label">Photos</span>
+        <span className="hint">
+          Up to {MAX_PHOTOS}. The first one is the cover.
+        </span>
 
-        {shownPhoto ? (
-          <img className="room-photo" src={shownPhoto} alt="" />
+        {photos.length === 0 ? (
+          <div className="room-photo room-photo-empty">No photos yet</div>
         ) : (
-          <div className="room-photo room-photo-empty">No photo yet</div>
+          <ul className="photo-grid">
+            {photos.map((url, i) => (
+              <li className="photo-item" key={url}>
+                <img src={url} alt="" />
+                {i === 0 && <span className="cover-badge">Cover</span>}
+                <div className="photo-item-actions">
+                  {i !== 0 && (
+                    <button
+                      type="button"
+                      className="linkish"
+                      onClick={() => makeCover(i)}
+                    >
+                      Make cover
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="linkish danger"
+                    onClick={() => removePhoto(i)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
 
-        <div className="photo-actions">
-          <label className="photo-pick">
-            {shownPhoto ? "Replace photo" : "Choose a photo"}
-            <input
-              type="file"
-              accept="image/*"
-              disabled={photoBusy}
-              onChange={handlePhoto}
-            />
-          </label>
-          {shownPhoto && !photoBusy && (
-            <button
-              type="button"
-              className="linkish danger"
-              onClick={() => {
-                setPreview(null);
-                set("photo_url", null);
-                setPhotoError(null);
-              }}
-            >
-              Remove
-            </button>
-          )}
-        </div>
+        {photos.length < MAX_PHOTOS && (
+          <div className="photo-actions">
+            <label className="photo-pick">
+              {photos.length ? "Add more photos" : "Choose photos"}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={photoBusy}
+                onChange={handlePhotos}
+              />
+            </label>
+          </div>
+        )}
 
         {photoBusy && <p className="hint">Uploading…</p>}
         {photoError && <p className="auth-error">{photoError}</p>}

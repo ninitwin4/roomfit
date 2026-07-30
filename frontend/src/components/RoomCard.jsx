@@ -36,19 +36,54 @@ function Gauge({ score, hero }) {
   );
 }
 
+// Swipeable photo strip. CSS scroll-snap does the swiping; the only JS here is
+// tracking which photo is centred so the dots can follow it.
+function Gallery({ photos }) {
+  const [at, setAt] = useState(0);
+
+  if (photos.length === 0) {
+    return <div className="room-photo room-photo-empty">No photo yet</div>;
+  }
+  if (photos.length === 1) {
+    return <img className="room-photo" src={photos[0]} alt="" loading="lazy" />;
+  }
+  return (
+    <div className="gallery">
+      <div
+        className="gallery-strip"
+        onScroll={(e) =>
+          setAt(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))
+        }
+      >
+        {photos.map((url) => (
+          <img key={url} className="room-photo" src={url} alt="" loading="lazy" />
+        ))}
+      </div>
+      <div className="gallery-dots" aria-hidden="true">
+        {photos.map((url, i) => (
+          <span key={url} className={i === at ? "dot on" : "dot"} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function RoomCard({ ranked, defaultOpen = false, hero = false }) {
   const [open, setOpen] = useState(defaultOpen);
   const { room, total_score, factors } = ranked;
 
+  // photo_url is the pre-photos[] fallback, kept in sync as the cover.
+  const photos = room.photos?.length
+    ? room.photos
+    : room.photo_url
+    ? [room.photo_url]
+    : [];
+
   return (
     <article className={hero ? "card card-hero" : "card"}>
-      {/* alt="" on purpose: the title sits directly below, so the image is
+      {/* alt="" on purpose: the title sits directly below, so the images are
           decorative and a real alt would announce the room twice. */}
-      {room.photo_url ? (
-        <img className="room-photo" src={room.photo_url} alt="" loading="lazy" />
-      ) : (
-        <div className="room-photo room-photo-empty">No photo yet</div>
-      )}
+      <Gallery photos={photos} />
 
       <div className="card-top">
         <div>

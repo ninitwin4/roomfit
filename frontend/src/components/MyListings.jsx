@@ -56,7 +56,8 @@ export default function MyListings() {
   // still gets deleted rather than leaving an undeletable listing.
   async function handleDelete(room) {
     try {
-      await deleteRoomPhoto(room.photo_url);
+      const urls = room.photos?.length ? room.photos : [room.photo_url];
+      for (const url of urls) await deleteRoomPhoto(url);
       await deleteRoom(room.id);
       setConfirmingId(null);
       await load();
@@ -121,8 +122,13 @@ export default function MyListings() {
         !loadError &&
         rooms.map((room) => (
           <article className="card listing" key={room.id}>
-            {room.photo_url ? (
-              <img className="room-photo" src={room.photo_url} alt="" loading="lazy" />
+            {room.photos?.length || room.photo_url ? (
+              <img
+                className="room-photo"
+                src={room.photos?.[0] ?? room.photo_url}
+                alt=""
+                loading="lazy"
+              />
             ) : (
               <div className="room-photo room-photo-empty">Add a photo</div>
             )}

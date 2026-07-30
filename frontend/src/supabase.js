@@ -11,7 +11,7 @@ export async function fetchRooms() {
   const { data, error } = await supabase
     .from("rooms")
     .select(
-      "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url"
+      "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos"
     );
 
   if (error) throw new Error(`Couldn't load rooms: ${error.message}`);
@@ -35,7 +35,7 @@ export async function fetchLocations() {
 // the insert passes the policy's WITH CHECK.
 
 const ROOM_FIELDS =
-  "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url";
+  "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos";
 
 async function currentUserId() {
   const {
@@ -56,12 +56,16 @@ const WRITABLE = [
   "sleep_schedule",
   "pets_allowed",
   "smoking_allowed",
-  "photo_url",
+  "photos",
 ];
 
 function writable(room) {
   const out = {};
   for (const k of WRITABLE) if (k in room) out[k] = room[k];
+  // Keep the legacy single-cover column in sync with photos[0]. Derived in one
+  // place so the two can't drift, and it keeps photo_url a valid fallback until
+  // it's dropped in a later migration.
+  if ("photos" in room) out.photo_url = room.photos?.[0] ?? null;
   return out;
 }
 
