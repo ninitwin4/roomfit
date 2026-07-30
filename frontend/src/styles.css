@@ -257,6 +257,54 @@ body {
   color: var(--fit-low);
 }
 
+/* --- room photos (Phase 1) ----------------------------------------------- */
+/* aspect-ratio reserves the box before the image loads, so nothing jumps on a
+   slow connection. The empty placeholder shares the class, which keeps photo
+   and no-photo cards exactly the same height. */
+.room-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover; /* portrait phone photos crop instead of letterboxing */
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  margin-bottom: 12px;
+}
+
+.room-photo-empty {
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+  border: 1px dashed var(--line);
+}
+
+/* shallower crop in the listings list, so rows stay scannable */
+.listing .room-photo {
+  aspect-ratio: 16 / 9;
+}
+
+.photo-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* a label styled as a link, wrapping a hidden file input */
+.photo-pick {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.photo-pick input {
+  display: none;
+}
+
 /* --- form ---------------------------------------------------------------- */
 .panel {
   background: var(--card);

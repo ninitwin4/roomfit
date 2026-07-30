@@ -34,7 +34,24 @@ export default function App() {
     setError(null);
     try {
       const rooms = await fetchRooms();
-      setData(await rankRooms(prefs, rooms));
+      const ranked = await rankRooms(prefs, rooms);
+
+      // The backend echoes back only the fields its scoring model declares, so
+      // display-only columns (photo_url) are dropped in transit. Merge them
+      // back from the Supabase rows we already have.
+      //
+      // Order matters: the backend's copy wins on the five scored fields, so a
+      // card can never disagree with its own receipt. Keys are stringified
+      // because a bigint id may arrive as a string from PostgREST and a number
+      // from JSON — a mismatch would silently no-op the merge.
+      const byId = new Map(rooms.map((r) => [String(r.id), r]));
+      setData({
+        ...ranked,
+        results: ranked.results.map((r) => ({
+          ...r,
+          room: { ...byId.get(String(r.room.id)), ...r.room },
+        })),
+      });
     } catch (err) {
       setError(
         err instanceof TypeError

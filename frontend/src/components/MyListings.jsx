@@ -4,6 +4,7 @@ import {
   createRoom,
   updateRoom,
   deleteRoom,
+  deleteRoomPhoto,
 } from "../supabase.js";
 import RoomForm from "./RoomForm.jsx";
 
@@ -50,9 +51,13 @@ export default function MyListings() {
     }
   }
 
-  async function handleDelete(id) {
+  // Takes the whole room (already in scope) so we can clean up its stored image
+  // without another query. Photo cleanup is best effort — if it fails, the row
+  // still gets deleted rather than leaving an undeletable listing.
+  async function handleDelete(room) {
     try {
-      await deleteRoom(id);
+      await deleteRoomPhoto(room.photo_url);
+      await deleteRoom(room.id);
       setConfirmingId(null);
       await load();
     } catch (err) {
@@ -116,6 +121,11 @@ export default function MyListings() {
         !loadError &&
         rooms.map((room) => (
           <article className="card listing" key={room.id}>
+            {room.photo_url ? (
+              <img className="room-photo" src={room.photo_url} alt="" loading="lazy" />
+            ) : (
+              <div className="room-photo room-photo-empty">Add a photo</div>
+            )}
             <h3 className="room-title">{room.title}</h3>
             <p className="room-meta">
               ${room.rent}/mo · {room.location}
@@ -133,7 +143,7 @@ export default function MyListings() {
                 <button
                   type="button"
                   className="linkish danger"
-                  onClick={() => handleDelete(room.id)}
+                  onClick={() => handleDelete(room)}
                 >
                   Yes, delete
                 </button>

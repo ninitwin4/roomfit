@@ -11,7 +11,7 @@ export async function fetchRooms() {
   const { data, error } = await supabase
     .from("rooms")
     .select(
-      "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id"
+      "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url"
     );
 
   if (error) throw new Error(`Couldn't load rooms: ${error.message}`);
@@ -35,7 +35,7 @@ export async function fetchLocations() {
 // the insert passes the policy's WITH CHECK.
 
 const ROOM_FIELDS =
-  "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id";
+  "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url";
 
 async function currentUserId() {
   const {
@@ -56,6 +56,7 @@ const WRITABLE = [
   "sleep_schedule",
   "pets_allowed",
   "smoking_allowed",
+  "photo_url",
 ];
 
 function writable(room) {
@@ -101,4 +102,73 @@ export async function updateRoom(id, room) {
 export async function deleteRoom(id) {
   const { error } = await supabase.from("rooms").delete().eq("id", id);
   if (error) throw new Error(`Couldn't delete the room: ${error.message}`);
+}
+
+// --- photos (Phase 1) -------------------------------------------------------
+// Phone photos are 3–5 MB; we downscale in the browser before uploading, which
+// keeps the free tier happy and the app fast on mobile data. Canvas only — no
+// image library, no new dependency.
+
+const PHOTO_BUCKET = "room-photos";
+
+async function downscale(file, maxEdge = 1200, quality = 0.8) {
+  // imageOrientation is explicit so a sideways iPhone photo isn't rendered
+  // rotated (the EXIF default varies by browser).
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    // HEIC and other formats the browser can't decode land here.
+    throw new Error("Couldn't read that image — try a JPEG or PNG.");
+  }
+
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, w, h);
+  bitmap.close(); // free the full-size decode immediately — matters on phones
+
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error("Couldn't process that image."))),
+      "image/jpeg",
+      quality
+    )
+  );
+}
+
+// Uploads a downscaled JPEG and returns its public URL. Path is
+// {uid}/{uuid}.jpg — the storage policy only lets you write your own folder.
+export async function uploadRoomPhoto(file, maxEdge = 1200) {
+  if (!file.type.startsWith("image/")) throw new Error("Pick an image file.");
+  if (file.size > 15 * 1024 * 1024) throw new Error("That image is too large.");
+
+  const uid = await currentUserId();
+  const blob = await downscale(file, maxEdge);
+  const path = `${uid}/${crypto.randomUUID()}.jpg`;
+
+  const { error } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, blob, { contentType: "image/jpeg", upsert: false });
+  if (error) throw new Error(`Couldn't upload the photo: ${error.message}`);
+
+  return supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+// Best effort: a failed cleanup must never block deleting or editing a room.
+// Note storage.remove() resolves without an error when RLS blocks it, so this
+// is genuinely fire-and-forget — don't infer success from the absence of a throw.
+export async function deleteRoomPhoto(url) {
+  if (!url) return;
+  const path = url.split(`/${PHOTO_BUCKET}/`)[1];
+  if (!path) return; // not one of ours (e.g. a seed photo set from the dashboard)
+  try {
+    await supabase.storage.from(PHOTO_BUCKET).remove([path]);
+  } catch {
+    /* ignore */
+  }
 }

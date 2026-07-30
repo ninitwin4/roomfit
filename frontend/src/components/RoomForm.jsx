@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchLocations } from "../supabase.js";
+import { fetchLocations, uploadRoomPhoto } from "../supabase.js";
 import Scale from "./Scale.jsx";
 
 const BLANK = {
@@ -11,12 +11,16 @@ const BLANK = {
   sleep_schedule: "flexible",
   pets_allowed: false,
   smoking_allowed: false,
+  photo_url: null,
 };
 
 // Add or edit one room. `initial` is a room to edit, or null to add a new one.
 export default function RoomForm({ initial, onSave, onCancel, saving, error }) {
   const [room, setRoom] = useState(() => ({ ...BLANK, ...(initial ?? {}) }));
   const [areas, setAreas] = useState([]);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState(null);
+  const [preview, setPreview] = useState(null); // local blob URL, shown instantly
 
   useEffect(() => {
     let alive = true;
@@ -28,8 +32,39 @@ export default function RoomForm({ initial, onSave, onCancel, saving, error }) {
     };
   }, []);
 
+  // Revokes the previous blob URL whenever it changes, and on unmount.
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   const set = (key, value) => setRoom((r) => ({ ...r, [key]: value }));
   const valid = room.title.trim() && room.location.trim() && room.rent >= 0;
+
+  // Upload on select rather than on save, so by the time you hit Save the photo
+  // is just another string field. We deliberately don't delete the previous
+  // image here: if you replace a photo and then Cancel, the saved room would be
+  // left pointing at a deleted file. Orphans are ~200 KB; broken images aren't.
+  async function handlePhoto(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file after a remove
+    if (!file) return;
+
+    setPhotoError(null);
+    setPreview(URL.createObjectURL(file));
+    setPhotoBusy(true);
+    try {
+      set("photo_url", await uploadRoomPhoto(file));
+    } catch (err) {
+      setPhotoError(err.message);
+      setPreview(null);
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  const shownPhoto = preview || room.photo_url;
 
   return (
     <div className="panel">
@@ -44,6 +79,45 @@ export default function RoomForm({ initial, onSave, onCancel, saving, error }) {
           value={room.title}
           onChange={(e) => set("title", e.target.value)}
         />
+      </div>
+
+      <div className="field">
+        <span className="field-label">Photo</span>
+        <span className="hint">One cover photo. Optional.</span>
+
+        {shownPhoto ? (
+          <img className="room-photo" src={shownPhoto} alt="" />
+        ) : (
+          <div className="room-photo room-photo-empty">No photo yet</div>
+        )}
+
+        <div className="photo-actions">
+          <label className="photo-pick">
+            {shownPhoto ? "Replace photo" : "Choose a photo"}
+            <input
+              type="file"
+              accept="image/*"
+              disabled={photoBusy}
+              onChange={handlePhoto}
+            />
+          </label>
+          {shownPhoto && !photoBusy && (
+            <button
+              type="button"
+              className="linkish danger"
+              onClick={() => {
+                setPreview(null);
+                set("photo_url", null);
+                setPhotoError(null);
+              }}
+            >
+              Remove
+            </button>
+          )}
+        </div>
+
+        {photoBusy && <p className="hint">Uploading…</p>}
+        {photoError && <p className="auth-error">{photoError}</p>}
       </div>
 
       <div className="field">

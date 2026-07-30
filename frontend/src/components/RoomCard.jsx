@@ -42,6 +42,14 @@ export default function RoomCard({ ranked, defaultOpen = false, hero = false }) 
 
   return (
     <article className={hero ? "card card-hero" : "card"}>
+      {/* alt="" on purpose: the title sits directly below, so the image is
+          decorative and a real alt would announce the room twice. */}
+      {room.photo_url ? (
+        <img className="room-photo" src={room.photo_url} alt="" loading="lazy" />
+      ) : (
+        <div className="room-photo room-photo-empty">No photo yet</div>
+      )}
+
       <div className="card-top">
         <div>
           <h3 className="room-title">{room.title}</h3>
