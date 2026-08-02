@@ -88,7 +88,14 @@ pure scoring service with no credentials to leak and nothing to migrate.
 - [x] "My listings" view: edit / delete your own only (RLS already enforces this).
 - [x] Header tabs (Find a room / My listings); shared 1–5 sliders and `$` inputs.
 - [x] 3 testers signed up; create / edit / delete verified live.
-- [ ] Collect feedback, fix the top issue.
+- [x] Collected tester feedback. Top issue: the first match felt slow. Measured
+      it — warm it's ~140ms (Supabase ~40ms + `/rank` ~100ms); the delay was
+      Render's free tier sleeping after ~15 min and cold-booting for ~30s.
+      Fixed by pinging `/health` on app load so the container wakes while the
+      user fills the form, stripping display-only fields from the `/rank` body
+      (7470 → 2866 bytes, 62% smaller, responses byte-identical), and saying
+      "waking the ranking service" after 3s instead of a silent spinner.
+      Re-tested by a user: ~4s, down from ~30s.
 
 ## Then — Demo Day
 - [ ] Pitch — **not drafted yet** (the last open item).

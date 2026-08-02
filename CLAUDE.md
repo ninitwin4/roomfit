@@ -105,13 +105,19 @@ render.yaml            backend deploy blueprint
   match → fit receipt works end to end.
 - ✅ **UI refresh** — clean white theme + single pine-green accent, and a signed-out
   "Welcome to roomfit" hero. Chrome only; score ramp + fit receipt unchanged.
-- 🔄 **Session B** — BUILT, pending live test. Header tabs (Find a room / My
-  listings), add/edit room form, my-listings with edit + inline-confirm delete,
-  RLS-guarded write helpers in supabase.js. Verified visually; create/edit/delete
-  against the DB still need a signed-in end-to-end check on the live site.
-- ✅ **Testers** — 3 tester accounts exist in Supabase. Still to confirm: each
-  can add a listing + run a match end to end (gated on Session B being live).
-- ⬜ **Demo Day pitch** — not drafted
+- ✅ **Session B** — LIVE. Header tabs (Find a room / My listings), add/edit room
+  form, my-listings with edit + inline-confirm delete, RLS-guarded write helpers
+  in supabase.js. Create / edit / delete verified against the live DB.
+- ✅ **Room photos** — up to 5 per room with a chosen cover (`photos text[]`,
+  `photos[1]` is the cover). Public `room-photos` bucket with storage policies
+  scoped to `{uid}/` paths; browser-side downscale before upload (~11MB → ~240KB).
+  Swipeable gallery with dots on result cards. `App.jsx` merges Supabase rows
+  back over the `/rank` response, because the backend echoes only its scored
+  fields and would otherwise drop `photos` silently.
+- ✅ **Testers + first feedback** — 3 accounts, each able to add a listing and run
+  a match. Top reported issue (slow first match) diagnosed and fixed; see
+  BUILD_PLAN for the numbers.
+- ⬜ **Demo Day pitch** — not drafted (the last open item)
 
 ## Working style
 
