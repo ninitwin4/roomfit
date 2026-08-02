@@ -3,7 +3,7 @@ import PreferenceForm from "./components/PreferenceForm.jsx";
 import RoomCard from "./components/RoomCard.jsx";
 import Auth from "./components/Auth.jsx";
 import MyListings from "./components/MyListings.jsx";
-import { rankRooms } from "./api.js";
+import { rankRooms, warmUp } from "./api.js";
 import { supabase, fetchRooms } from "./supabase.js";
 
 export default function App() {
@@ -13,9 +13,24 @@ export default function App() {
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [slow, setSlow] = useState(false);
   const [error, setError] = useState(null);
 
+  // A match is ~140ms warm. If it's taking seconds, the free-tier backend is
+  // booting — say so rather than leaving someone watching a silent spinner.
   useEffect(() => {
+    if (!loading) {
+      setSlow(false);
+      return;
+    }
+    const t = setTimeout(() => setSlow(true), 3000);
+    return () => clearTimeout(t);
+  }, [loading]);
+
+  useEffect(() => {
+    // Wake the ranking service now, so it's ready by the time anyone submits.
+    warmUp();
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setCheckingAuth(false);
@@ -144,7 +159,9 @@ export default function App() {
                   <div className="spinner" aria-hidden="true" />
                   <p className="loading-title">Finding your fit…</p>
                   <p className="loading-sub">
-                    Ranking rooms by how well they match you.
+                    {slow
+                      ? "Waking the ranking service — the first match after a quiet spell can take up to 30 seconds."
+                      : "Ranking rooms by how well they match you."}
                   </p>
                 </div>
               )}
