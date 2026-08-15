@@ -104,6 +104,16 @@ pure scoring service with no credentials to leak and nothing to migrate.
       empty / error states.
 - [ ] Warm the Render service before demoing (free-tier cold start ~30s).
 
+## Backlog — ideas, not commitments
+
+- [ ] **Save / favourite rooms** — let a seeker shortlist rooms from their
+      results and come back to them later. Needs a `favourites` table
+      (`user_id`, `room_id`, unique together) with RLS scoped to the owner, a
+      heart control on `RoomCard`, and somewhere to view the list — probably a
+      third tab rather than crowding "Find a room".
+- [ ] Profile avatars → in-app messaging → public shareable listings
+      (specced in detail already; phased so each ships on its own).
+
 ## Scoring reference
 
 - **Budget fit** — cheaper scores higher (more budget left over). Flip

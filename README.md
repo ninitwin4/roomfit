@@ -137,6 +137,7 @@ To point at your own Supabase project, run the SQL files in `supabase/` in numer
 
 ## 💭 Future enhancements
 
+- **Saved rooms** — shortlist the ones you like and come back to them later.
 - **Profile avatars** — a face next to a listing, so a room feels like it belongs to a person.
 - **In-app messaging** — let a seeker and a room owner talk without leaving the app.
 - **Shareable listings** — a public link for a listing, opt-in per room, with the owner's profile and social links.
