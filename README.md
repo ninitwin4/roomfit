@@ -131,7 +131,6 @@ To point at your own Supabase project, run the SQL files in `supabase/` in numer
 | ✅ | Post / edit / delete your own listings |
 | ✅ | Room photos — up to 5, chosen cover, swipeable gallery |
 | ✅ | 3 real testers; first feedback round shipped |
-| ⬜ | Demo Day pitch |
 
 ---
 

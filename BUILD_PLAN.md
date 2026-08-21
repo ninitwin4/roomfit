@@ -28,7 +28,7 @@ allowed, smoking home when seeker isn't ok with it.
 | 1 | Foundations (local): data model, seed rooms, ranking engine, basic React UI. End-to-end locally, no auth. |
 | 2 | Auth, DB & deploy: Supabase (Postgres + auth), seed rooms into DB, login. React → Vercel, FastAPI `/rank` → Render. Live. |
 | 3 | User listings + real testers: "create listing" CRUD, 3 pod testers sign up, add rooms, run matches. Collect feedback, fix top issues. |
-| 4 | Polish + Demo Day: explanation polish, mobile spacing, empty states, pitch. |
+| 4 | Polish + continue backlog ideas: explanation polish, mobile spacing, empty states. |
 
 ---
 
@@ -97,12 +97,9 @@ pure scoring service with no credentials to leak and nothing to migrate.
       "waking the ranking service" after 3s instead of a silent spinner.
       Re-tested by a user: ~4s, down from ~30s.
 
-## Then — Demo Day
-- [ ] Pitch — **not drafted yet** (the last open item).
-- [x] Polish shipped: white theme + welcome hero, circular fit gauges,
-      slider-style factor bars, loading spinner, money-input cleanup,
-      empty / error states.
-- [ ] Warm the Render service before demoing (free-tier cold start ~30s).
+## Polish — shipped
+- [x] White theme + welcome hero, circular fit gauges, slider-style factor bars,
+      loading spinner, money-input cleanup, empty / error states.
 
 ## Backlog — ideas, not commitments
 

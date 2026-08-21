@@ -117,7 +117,7 @@ render.yaml            backend deploy blueprint
 - ✅ **Testers + first feedback** — 3 accounts, each able to add a listing and run
   a match. Top reported issue (slow first match) diagnosed and fixed; see
   BUILD_PLAN for the numbers.
-- ⬜ **Demo Day pitch** — not drafted (the last open item)
+- ⬜ **Saved / favourite rooms** — next up; see the backlog in BUILD_PLAN
 
 ## Working style
 
