@@ -18,6 +18,7 @@
 - **Deterministic ranking.** No LLM in the scoring path. The same input always produces the same result, so a score is explainable and reproducible.
 - **Hard filters are honest.** Dealbreakers drop a room entirely, and the app tells you how many and why: *"6 ruled out on budget, pets, or smoking."*
 - **Post your own room** with up to 5 photos and a chosen cover.
+- **Message the person, not a listing.** Every real room shows who owns it, and you can start a conversation without leaving the app.
 - **Mobile-first.** Built to be used on a phone while actually flat-hunting.
 
 ---
@@ -118,7 +119,7 @@ npm install
 npm run dev                        # http://localhost:5173
 ```
 
-To point at your own Supabase project, run the SQL files in `supabase/` in numerical order (`01_schema.sql` → `04_photos_multi.sql`).
+To point at your own Supabase project, run the SQL files in `supabase/` in numerical order (`01_schema.sql` → `08_messages.sql`).
 
 ---
 
@@ -131,14 +132,14 @@ To point at your own Supabase project, run the SQL files in `supabase/` in numer
 | ✅ | Post / edit / delete your own listings |
 | ✅ | Room photos — up to 5, chosen cover, swipeable gallery |
 | ✅ | Saved rooms — heart a match, re-ranked against your latest preferences |
+| ✅ | Profiles — names and avatars (photo or coloured initials) |
+| ✅ | In-app messaging between seekers and room owners |
 | ✅ | 3 real testers; first feedback round shipped |
 
 ---
 
 ## 💭 Future enhancements
 
-- **Profile avatars** — a face next to a listing, so a room feels like it belongs to a person.
-- **In-app messaging** — let a seeker and a room owner talk without leaving the app.
 - **Shareable listings** — a public link for a listing, opt-in per room, with the owner's profile and social links.
 - **LLM-written explanations** — as a layer *on top of* the deterministic score, never inside the scoring path.
 

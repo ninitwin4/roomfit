@@ -38,7 +38,9 @@ Don't relitigate these without being asked:
 
 - **Web app, not native.**
 - **One core loop:** set preferences → ranked rooms → why each matched.
-- **Matching is asymmetric:** seeker → room (person to listing), not person to person.
+- **Matching is asymmetric:** seeker → room (person to listing), not person to
+  person. Amended: messaging *is* person-to-person, but **ranking** still only
+  ever scores a person against a listing. Don't add person-to-person scoring.
 - **Ranking is deterministic.** No LLM in the scoring path.
 - **5 scored factors**, 20 pts each → 0–100: budget fit, location, cleanliness,
   social level, sleep schedule.
@@ -96,7 +98,13 @@ frontend/src/
     RoomForm.jsx       add / edit a listing, photo upload
     MyListings.jsx     your own rooms: edit + inline-confirm delete
     SavedRooms.jsx     saved rooms, re-ranked against your last search
+    Messages.jsx       inbox + thread, owns its own back-and-forth
+    Avatar.jsx         photo or coloured initials; palette lives here
+    ProfileEditor.jsx  the profile sheet (avatar + name)
+    NameStep.jsx       one-time "enter your name" after signup
+    ResetPassword.jsx  set a new password after a reset link
     Scale.jsx          shared 1–5 slider with value bubble
+  unread.js            localStorage unread tracking (and why it's not read_at)
   styles.css           design tokens at the top
 supabase/              run in numerical order
   01_schema.sql        rooms table + RLS policies
@@ -104,6 +112,9 @@ supabase/              run in numerical order
   03_photos.sql        photo_url column + room-photos bucket + storage policies
   04_photos_multi.sql  photos text[] (photos[1] = cover), backfilled
   05_favourites.sql    favourites table + RLS
+  06_profiles.sql      profiles (names, avatar) + RLS
+  07_avatars.sql       avatar_color + avatars bucket + storage policies
+  08_messages.sql      messages table + RLS (immutable by design)
 render.yaml            backend deploy blueprint
 ```
 
@@ -133,6 +144,14 @@ render.yaml            backend deploy blueprint
   impossible; RLS scoped to the owner. Saved rooms are re-ranked against the last
   search (prefs persist to `localStorage`), and one that stops matching is listed
   with the reason instead of vanishing.
+- ✅ **Profiles, avatars & names** — `profiles` table; name collected at signup
+  and shown instead of the email; avatar is a photo or initials on a palette
+  colour, edited by tapping your name in the header.
+- ✅ **In-app messaging** — Inbox tab, threads keyed by (room, other person),
+  immutable messages, unread in `localStorage`. Room cards show the owner's
+  avatar + first name and a Message button; seed rooms read "Sample listing"
+  and aren't messageable.
+- ⬜ **Public shareable listings** — specced, not started (the last planned item)
 
 ## Working style
 

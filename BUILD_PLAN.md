@@ -113,10 +113,31 @@ pure scoring service with no credentials to leak and nothing to migrate.
 - [x] A saved room that later fails a hard filter is listed with the reason
       ("$1600 is over your $1000 budget") instead of silently disappearing.
 
+## Profiles, avatars & messaging — shipped
+- [x] `profiles` table (first/last name, avatar). A table rather than
+      `auth.users` metadata, because PostgREST can't expose the auth schema —
+      metadata could only ever show you your *own* name, never a room owner's.
+- [x] Name collected as a second signup step; the header shows it instead of
+      the email. Accounts created before this get asked once, on next visit.
+- [x] Avatars: upload a photo, or initials on one of six palette colours.
+      An unchosen colour is derived from the user id, so nobody is a grey blob.
+      Editing opens from tapping your name in the header.
+- [x] Messaging: one `messages` table, thread = (room_id, other participant).
+      Single table on purpose — the read policy touches no other table, so RLS
+      recursion is impossible. Messages are immutable (no UPDATE policy: one
+      scoped to `recipient_id` would also allow rewriting `body`).
+- [x] Room cards show the owner's avatar + first name and a Message button.
+      Seed rooms stay ownerless and read "Sample listing" with no button — no
+      invented persona, and the hybrid-listings decision stands.
+- [x] Unread tracked in `localStorage`; new messages arrive on open/Refresh
+      rather than Realtime. Both are deliberate trade-offs — see `unread.js`.
+
 ## Backlog — ideas, not commitments
 
-- [ ] Profile avatars → in-app messaging → public shareable listings
-      (specced in detail already; phased so each ships on its own).
+- [ ] Public shareable listings (opt-in per room, owner profile + social links).
+      Specced in detail already.
+- [ ] Live message delivery via Supabase Realtime, and cross-device unread
+      using the `read_at` column that's already reserved.
 
 ## Scoring reference
 
