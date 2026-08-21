@@ -130,13 +130,13 @@ To point at your own Supabase project, run the SQL files in `supabase/` in numer
 | ✅ | Supabase auth + Postgres with RLS; deployed to Vercel + Render |
 | ✅ | Post / edit / delete your own listings |
 | ✅ | Room photos — up to 5, chosen cover, swipeable gallery |
+| ✅ | Saved rooms — heart a match, re-ranked against your latest preferences |
 | ✅ | 3 real testers; first feedback round shipped |
 
 ---
 
 ## 💭 Future enhancements
 
-- **Saved rooms** — shortlist the ones you like and come back to them later.
 - **Profile avatars** — a face next to a listing, so a room feels like it belongs to a person.
 - **In-app messaging** — let a seeker and a room owner talk without leaving the app.
 - **Shareable listings** — a public link for a listing, opt-in per room, with the owner's profile and social links.

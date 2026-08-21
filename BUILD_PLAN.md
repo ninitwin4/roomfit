@@ -101,13 +101,20 @@ pure scoring service with no credentials to leak and nothing to migrate.
 - [x] White theme + welcome hero, circular fit gauges, slider-style factor bars,
       loading spinner, money-input cleanup, empty / error states.
 
+## Saved rooms — shipped
+- [x] `favourites` table keyed `(user_id, room_id)`, so a duplicate save is
+      impossible at the database level rather than guarded in the UI. RLS scoped
+      to the owner; cascade delete from both users and rooms.
+- [x] Heart on each result card (optimistic, hidden on your own listings) and a
+      third "Saved" tab with a live count.
+- [x] Saved rooms are re-ranked against the last search rather than freezing a
+      score at save time. Preferences persist to `localStorage` — which also
+      stops the form resetting to defaults every visit.
+- [x] A saved room that later fails a hard filter is listed with the reason
+      ("$1600 is over your $1000 budget") instead of silently disappearing.
+
 ## Backlog — ideas, not commitments
 
-- [ ] **Save / favourite rooms** — let a seeker shortlist rooms from their
-      results and come back to them later. Needs a `favourites` table
-      (`user_id`, `room_id`, unique together) with RLS scoped to the owner, a
-      heart control on `RoomCard`, and somewhere to view the list — probably a
-      third tab rather than crowding "Find a room".
 - [ ] Profile avatars → in-app messaging → public shareable listings
       (specced in detail already; phased so each ships on its own).
 

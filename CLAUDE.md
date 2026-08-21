@@ -76,8 +76,9 @@ Only touch these if everything above is done and there's time left:
 ## Where things are
 
 ```
-BUILD_PLAN.md          scope, 4-week arc, scoring reference
-SESSION_A.md           runbook: Supabase + auth + deploy   ← current step
+README.md              public front door: goal, architecture, status, roadmap
+BUILD_PLAN.md          scope, phase arc, scoring reference, backlog
+SESSION_A.md           runbook: Supabase + auth + deploy (done)
 CLAUDE.md              this file
 backend/
   models.py            Room, Preferences, RankRequest, RankResponse
@@ -85,14 +86,24 @@ backend/
   seed_rooms.json      12 seed rooms (source of truth for the seed SQL)
   main.py              /health, /rank
 frontend/src/
-  App.jsx              auth gate + form/results state
-  api.js               the only file that knows the backend URL
-  supabase.js          client + fetchRooms()
-  components/          Auth, PreferenceForm, RoomCard (the fit receipt)
+  App.jsx              auth gate, tabs, match flow, favourites state
+  api.js               backend URL, warmUp(), strips non-scored fields
+  supabase.js          client + all DB/storage helpers
+  components/
+    Auth.jsx           email + password sign in / sign up
+    PreferenceForm.jsx the search form
+    RoomCard.jsx       the fit receipt — gauge, gallery, factor bars, heart
+    RoomForm.jsx       add / edit a listing, photo upload
+    MyListings.jsx     your own rooms: edit + inline-confirm delete
+    SavedRooms.jsx     saved rooms, re-ranked against your last search
+    Scale.jsx          shared 1–5 slider with value bubble
   styles.css           design tokens at the top
-supabase/
+supabase/              run in numerical order
   01_schema.sql        rooms table + RLS policies
   02_seed_rooms.sql    generated from seed_rooms.json — regenerate, don't hand-edit
+  03_photos.sql        photo_url column + room-photos bucket + storage policies
+  04_photos_multi.sql  photos text[] (photos[1] = cover), backfilled
+  05_favourites.sql    favourites table + RLS
 render.yaml            backend deploy blueprint
 ```
 
@@ -117,7 +128,11 @@ render.yaml            backend deploy blueprint
 - ✅ **Testers + first feedback** — 3 accounts, each able to add a listing and run
   a match. Top reported issue (slow first match) diagnosed and fixed; see
   BUILD_PLAN for the numbers.
-- ⬜ **Saved / favourite rooms** — next up; see the backlog in BUILD_PLAN
+- ✅ **Saved / favourite rooms** — heart on each result, third "Saved" tab with a
+  live count. `favourites` keyed `(user_id, room_id)` so duplicate saves are
+  impossible; RLS scoped to the owner. Saved rooms are re-ranked against the last
+  search (prefs persist to `localStorage`), and one that stops matching is listed
+  with the reason instead of vanishing.
 
 ## Working style
 
