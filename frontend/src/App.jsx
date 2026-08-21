@@ -5,12 +5,15 @@ import Auth from "./components/Auth.jsx";
 import MyListings from "./components/MyListings.jsx";
 import SavedRooms, { PREFS_KEY } from "./components/SavedRooms.jsx";
 import ResetPassword from "./components/ResetPassword.jsx";
+import NameStep from "./components/NameStep.jsx";
 import { rankRooms, warmUp } from "./api.js";
 import {
   supabase,
   fetchRooms,
   fetchFavouriteIds,
   toggleFavourite,
+  fetchMyProfile,
+  displayName,
 } from "./supabase.js";
 
 export default function App() {
@@ -19,6 +22,12 @@ export default function App() {
   const [view, setView] = useState("find"); // "find" | "saved" | "listings"
   const [savedIds, setSavedIds] = useState(() => new Set());
   const [recovering, setRecovering] = useState(false);
+  // undefined = not looked up yet, null = no profile row, object = loaded
+  const [profile, setProfile] = useState(undefined);
+  // true when the profiles table can't be read at all (e.g. migration not run).
+  // Kept separate from `null` so a lookup failure never traps someone on the
+  // name step with no way past it.
+  const [profileUnavailable, setProfileUnavailable] = useState(false);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -68,6 +77,31 @@ export default function App() {
     fetchFavouriteIds()
       .then((ids) => alive && setSavedIds(ids))
       .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [session]);
+
+  // The profile carries the display name. Fails soft to `null` so that if the
+  // profiles table isn't there yet, the app still works and simply falls back
+  // to showing the email — it must never gate someone out of the app.
+  useEffect(() => {
+    if (!session) {
+      setProfile(undefined);
+      return;
+    }
+    let alive = true;
+    fetchMyProfile()
+      .then((p) => {
+        if (!alive) return;
+        setProfile(p);
+        setProfileUnavailable(false);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setProfile(null);
+        setProfileUnavailable(true);
+      });
     return () => {
       alive = false;
     };
@@ -142,6 +176,9 @@ export default function App() {
   }
 
   const results = data?.results ?? [];
+  const name = displayName(profile);
+  // Ask for a name only once we know for certain there isn't one on file.
+  const needsName = !!session && profile === null && !profileUnavailable;
 
   return (
     <main className="app">
@@ -187,7 +224,7 @@ export default function App() {
           </p>
           {session && (
             <p className="signed-in">
-              {session.user.email}
+              {name ?? session.user.email}
               {" · "}
               <button
                 type="button"
@@ -205,6 +242,8 @@ export default function App() {
         <ResetPassword onDone={() => setRecovering(false)} />
       ) : !session ? (
         <Auth />
+      ) : needsName ? (
+        <NameStep onDone={(p) => setProfile(p)} />
       ) : (
         <>
           <nav className="tabs">

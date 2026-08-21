@@ -108,6 +108,41 @@ export async function deleteRoom(id) {
   if (error) throw new Error(`Couldn't delete the room: ${error.message}`);
 }
 
+// --- profiles ---------------------------------------------------------------
+
+export function displayName(profile) {
+  if (!profile) return null;
+  const name = [profile.first_name, profile.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  return name || null;
+}
+
+// Returns null when the user has no profile row yet — that's the signal to ask
+// for their name. Throws only on a real failure, so callers can fail soft.
+export async function fetchMyProfile() {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, first_name, last_name, avatar_url")
+    .eq("id", uid)
+    .maybeSingle(); // no row is a valid answer here, not an error
+  if (error) throw new Error(`Couldn't load your profile: ${error.message}`);
+  return data;
+}
+
+export async function saveMyProfile(fields) {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert({ id: uid, ...fields }, { onConflict: "id" })
+    .select("id, first_name, last_name, avatar_url")
+    .single();
+  if (error) throw new Error(`Couldn't save your name: ${error.message}`);
+  return data;
+}
+
 // --- saved / favourite rooms ------------------------------------------------
 // RLS scopes every one of these to the signed-in user, so a favourite is
 // private. Reads fail soft: favourites are an enhancement, and a problem here
