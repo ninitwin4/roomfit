@@ -145,6 +145,84 @@ export async function saveMyProfile(fields) {
   return data;
 }
 
+// Profiles for a set of user ids, as a Map keyed by id. Used to put a name and
+// avatar on other people's listings and message threads.
+export async function fetchProfilesByIds(ids) {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(PROFILE_FIELDS)
+    .in("id", unique);
+  if (error) throw new Error(`Couldn't load profiles: ${error.message}`);
+  return new Map((data ?? []).map((p) => [p.id, p]));
+}
+
+// --- messaging --------------------------------------------------------------
+// A thread is (room_id, the other participant). RLS restricts every read to
+// threads you're part of, so the filters below only narrow — they never
+// protect. Never rely on a filter for privacy here.
+
+const MESSAGE_FIELDS = "id, room_id, sender_id, recipient_id, body, created_at";
+
+export async function fetchThread(roomId, otherId) {
+  const { data, error } = await supabase
+    .from("messages")
+    .select(MESSAGE_FIELDS)
+    .eq("room_id", roomId)
+    .or(`sender_id.eq.${otherId},recipient_id.eq.${otherId}`)
+    .order("created_at");
+  if (error) throw new Error(`Couldn't load the conversation: ${error.message}`);
+  return data ?? [];
+}
+
+export async function sendMessage({ roomId, recipientId, body }) {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("messages")
+    .insert({
+      room_id: roomId,
+      sender_id: uid,
+      recipient_id: recipientId,
+      body: body.trim(),
+    })
+    .select(MESSAGE_FIELDS)
+    .single();
+  if (error) throw new Error(`Couldn't send that message: ${error.message}`);
+  return data;
+}
+
+// Every message you're part of, newest first, grouped into threads in JS.
+// Grouping client-side avoids a view or an RPC; at demo volumes it's nothing.
+export async function fetchInbox() {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("messages")
+    .select(`${MESSAGE_FIELDS}, rooms (id, title, photos, photo_url)`)
+    .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
+    .order("created_at", { ascending: false })
+    .limit(300);
+  if (error) throw new Error(`Couldn't load your messages: ${error.message}`);
+
+  const threads = new Map();
+  for (const m of data ?? []) {
+    const otherId = m.sender_id === uid ? m.recipient_id : m.sender_id;
+    const key = `${m.room_id}:${otherId}`;
+    // rows arrive newest-first, so the first one we see per key is the latest
+    if (!threads.has(key)) {
+      threads.set(key, {
+        key,
+        roomId: m.room_id,
+        room: m.rooms,
+        otherId,
+        last: m,
+        lastFromMe: m.sender_id === uid,
+      });
+    }
+  }
+  return [...threads.values()];
+}
+
 // --- saved / favourite rooms ------------------------------------------------
 // RLS scopes every one of these to the signed-in user, so a favourite is
 // private. Reads fail soft: favourites are an enhancement, and a problem here

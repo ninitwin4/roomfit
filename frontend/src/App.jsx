@@ -8,6 +8,7 @@ import ResetPassword from "./components/ResetPassword.jsx";
 import NameStep from "./components/NameStep.jsx";
 import ProfileEditor from "./components/ProfileEditor.jsx";
 import Avatar from "./components/Avatar.jsx";
+import Messages from "./components/Messages.jsx";
 import { rankRooms, warmUp } from "./api.js";
 import {
   supabase,
@@ -15,6 +16,7 @@ import {
   fetchFavouriteIds,
   toggleFavourite,
   fetchMyProfile,
+  fetchProfilesByIds,
   displayName,
 } from "./supabase.js";
 
@@ -31,6 +33,9 @@ export default function App() {
   // name step with no way past it.
   const [profileUnavailable, setProfileUnavailable] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [owners, setOwners] = useState(new Map()); // owner_id -> profile
+  const [openThread, setOpenThread] = useState(null);
+  const [unread, setUnread] = useState(0);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -118,6 +123,13 @@ export default function App() {
     setError(null);
   }
 
+  // "Message" on a room card is the one cross-view jump: hand the thread to
+  // the Messages tab and switch to it.
+  function handleMessage(room) {
+    setOpenThread({ roomId: room.id, otherId: room.owner_id, room });
+    setView("messages");
+  }
+
   // Optimistic: flip the heart immediately, roll back only if the write fails.
   async function handleToggleSave(roomId, on) {
     const key = String(roomId);
@@ -177,6 +189,22 @@ export default function App() {
       setLoading(false);
     }
   }
+
+  // Owner name + avatar for the rooms currently on screen. Fails soft — a
+  // missing profile just renders as "Someone".
+  useEffect(() => {
+    const ids = (data?.results ?? [])
+      .map((r) => r.room.owner_id)
+      .filter(Boolean);
+    if (ids.length === 0) return;
+    let alive = true;
+    fetchProfilesByIds(ids)
+      .then((m) => alive && setOwners(m))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [data]);
 
   const results = data?.results ?? [];
   const name = displayName(profile);
@@ -277,7 +305,7 @@ export default function App() {
               className={view === "find" ? "tab active" : "tab"}
               onClick={() => setView("find")}
             >
-              Find a room
+              Find
             </button>
             <button
               type="button"
@@ -288,14 +316,28 @@ export default function App() {
             </button>
             <button
               type="button"
+              className={view === "messages" ? "tab active" : "tab"}
+              onClick={() => setView("messages")}
+            >
+              Inbox{unread > 0 ? ` (${unread})` : ""}
+            </button>
+            <button
+              type="button"
               className={view === "listings" ? "tab active" : "tab"}
               onClick={() => setView("listings")}
             >
-              My listings
+              Listings
             </button>
           </nav>
 
-          {view === "saved" ? (
+          {view === "messages" ? (
+            <Messages
+              me={session.user.id}
+              openThread={openThread}
+              onConsumeOpen={() => setOpenThread(null)}
+              onUnreadChange={setUnread}
+            />
+          ) : view === "saved" ? (
             <SavedRooms savedIds={savedIds} onToggleSave={handleToggleSave} />
           ) : view === "listings" ? (
             <MyListings />
@@ -373,6 +415,12 @@ export default function App() {
                     defaultOpen={i === 0}
                     hero={i === 0}
                     saved={savedIds.has(String(r.room.id))}
+                    owner={owners.get(r.room.owner_id)}
+                    onMessage={
+                      r.room.owner_id && r.room.owner_id !== session?.user?.id
+                        ? handleMessage
+                        : undefined
+                    }
                     // no heart on your own listing — you can't save yourself
                     onToggleSave={
                       r.room.owner_id && r.room.owner_id === session?.user?.id

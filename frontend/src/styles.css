@@ -426,6 +426,212 @@ body {
   margin: 0 0 18px;
 }
 
+/* --- who owns a room ------------------------------------------------------ */
+.owner-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.owner-name {
+  font-weight: 600;
+}
+
+.owner-msg {
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.sample-tag {
+  display: inline-block;
+  margin: 12px 0 0;
+  padding: 3px 9px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+/* --- messages ------------------------------------------------------------- */
+.thread-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.thread-row {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: var(--pad);
+  text-align: left;
+  font-family: var(--body);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.thread-row.unread {
+  border-color: var(--accent);
+}
+
+.thread-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.thread-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.thread-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.thread-time {
+  font-size: 12px;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.thread-room {
+  display: block;
+  font-family: var(--data);
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 2px 0 4px;
+}
+
+/* one line only — the thread view is where you read the whole thing */
+.thread-snippet {
+  display: block;
+  font-size: 14px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.thread-head {
+  margin-bottom: 12px;
+}
+
+.thread-about {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.thread-about-photo {
+  width: 56px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.thread-about-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.bubble {
+  max-width: 82%;
+  align-self: flex-start;
+  padding: 10px 13px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px 14px 14px 4px;
+}
+
+.bubble.mine {
+  align-self: flex-end;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+  border-radius: 14px 14px 4px 14px;
+}
+
+.bubble p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: pre-wrap; /* keep the sender's line breaks */
+  overflow-wrap: anywhere; /* a long URL must not blow out the layout */
+}
+
+.bubble-time {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.composer textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  font-family: var(--body);
+  font-size: 16px; /* stops iOS zooming on focus */
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  resize: none;
+}
+
+/* Scoped to .composer on purpose: the generic .submit rule (width: 100%) is
+   declared later in this file, so a bare .composer-send selector would lose
+   to it on order and the button would swallow the whole row. */
+.composer .composer-send {
+  width: auto;
+  flex-shrink: 0;
+  padding: 12px 18px;
+}
+
 /* --- saved rooms --------------------------------------------------------- */
 .card-media {
   position: relative;

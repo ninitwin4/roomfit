@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Avatar from "./Avatar.jsx";
 
 // One ramp, used for both the total score and each factor bar, so the color
 // always means the same thing: how well this piece fits.
@@ -74,6 +75,8 @@ export default function RoomCard({
   hero = false,
   saved = false,
   onToggleSave, // omitted (e.g. on your own listing) → no heart is rendered
+  owner, // the owner's profile, when the room has one
+  onMessage, // omitted on your own room, and on ownerless seed rooms
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const { room, total_score, factors } = ranked;
@@ -113,6 +116,28 @@ export default function RoomCard({
         </div>
         <Gauge score={total_score} hero={hero} />
       </div>
+
+      {/* Seed rooms genuinely have no owner, so we say so rather than
+          inventing a persona for them to be messaged. */}
+      {room.owner_id ? (
+        <div className="owner-row">
+          <Avatar profile={owner} size={24} />
+          <span className="owner-name">
+            {owner?.first_name?.trim() || "Someone"}
+          </span>
+          {onMessage && (
+            <button
+              type="button"
+              className="linkish owner-msg"
+              onClick={() => onMessage(room)}
+            >
+              Message
+            </button>
+          )}
+        </div>
+      ) : (
+        <p className="sample-tag">Sample listing</p>
+      )}
 
       {open && (
         <div className="receipt">
