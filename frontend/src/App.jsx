@@ -4,6 +4,7 @@ import RoomCard from "./components/RoomCard.jsx";
 import Auth from "./components/Auth.jsx";
 import MyListings from "./components/MyListings.jsx";
 import SavedRooms, { PREFS_KEY } from "./components/SavedRooms.jsx";
+import ResetPassword from "./components/ResetPassword.jsx";
 import { rankRooms, warmUp } from "./api.js";
 import {
   supabase,
@@ -17,6 +18,7 @@ export default function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [view, setView] = useState("find"); // "find" | "saved" | "listings"
   const [savedIds, setSavedIds] = useState(() => new Set());
+  const [recovering, setRecovering] = useState(false);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,11 @@ export default function App() {
       setCheckingAuth(false);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      // Arriving from a reset link: Supabase puts the user in a temporary
+      // recovery session, so we must intercept before the normal signed-in
+      // view renders and ask them to set a new password.
+      if (event === "PASSWORD_RECOVERY") setRecovering(true);
       setSession(s);
       if (!s) {
         setData(null); // clear results on sign out
@@ -195,7 +201,9 @@ export default function App() {
         </header>
       )}
 
-      {checkingAuth ? null : !session ? (
+      {checkingAuth ? null : recovering ? (
+        <ResetPassword onDone={() => setRecovering(false)} />
+      ) : !session ? (
         <Auth />
       ) : (
         <>

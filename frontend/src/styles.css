@@ -979,3 +979,59 @@ input[type="password"] {
   margin: 16px 0 0;
   text-align: center;
 }
+
+/* "Forgot password", directly under the primary button */
+.auth-forgot {
+  margin: 16px 0 0;
+  text-align: center;
+}
+
+.auth-forgot .linkish {
+  font-weight: 600;
+}
+
+/* password field with a show/hide toggle.
+   Declared after the input[type=...] rules above so it wins on order —
+   both selectors have the same specificity. */
+.password-input {
+  display: flex;
+  align-items: stretch;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.password-input:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.password-input input {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.password-input input:focus-visible {
+  outline: none;
+}
+
+.peek {
+  padding: 0 14px;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.peek:hover {
+  color: var(--accent);
+}
