@@ -67,6 +67,14 @@ export default function App() {
     };
   }, [session]);
 
+  // Tapping the wordmark returns to the start of the match flow — the same
+  // place "Change preferences" goes, so the logo behaves like a home button.
+  function goHome() {
+    setView("find");
+    setData(null);
+    setError(null);
+  }
+
   // Optimistic: flip the heart immediately, roll back only if the write fails.
   async function handleToggleSave(roomId, on) {
     const key = String(roomId);
@@ -157,7 +165,16 @@ export default function App() {
         </header>
       ) : (
         <header className="masthead">
-          <h1 className="wordmark">roomfit</h1>
+          <h1 className="wordmark">
+            <button
+              type="button"
+              className="wordmark-btn"
+              onClick={goHome}
+              aria-label="roomfit — back to search"
+            >
+              roomfit
+            </button>
+          </h1>
           <p className="tagline">
             Rooms ranked by how well they fit you — and the reason for every
             rank.

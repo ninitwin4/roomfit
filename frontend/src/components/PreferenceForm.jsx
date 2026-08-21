@@ -138,7 +138,7 @@ export default function PreferenceForm({ onSubmit, loading }) {
       </div>
 
       <div className="field">
-        <label htmlFor="sleep">Your hours</label>
+        <label htmlFor="sleep">Your sleep hours</label>
         <select
           id="sleep"
           value={prefs.sleep_pref}

@@ -68,6 +68,18 @@ body {
   margin: 0;
 }
 
+/* the wordmark doubles as a home button — reset the button chrome so it still
+   looks like a heading, not a control */
+.wordmark-btn {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
 .tagline {
   color: var(--ink-soft);
   margin: 4px 0 0;
