@@ -110,6 +110,8 @@ export async function deleteRoom(id) {
 
 // --- profiles ---------------------------------------------------------------
 
+const PROFILE_FIELDS = "id, first_name, last_name, avatar_url, avatar_color";
+
 export function displayName(profile) {
   if (!profile) return null;
   const name = [profile.first_name, profile.last_name]
@@ -125,7 +127,7 @@ export async function fetchMyProfile() {
   const uid = await currentUserId();
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, first_name, last_name, avatar_url")
+    .select(PROFILE_FIELDS)
     .eq("id", uid)
     .maybeSingle(); // no row is a valid answer here, not an error
   if (error) throw new Error(`Couldn't load your profile: ${error.message}`);
@@ -137,7 +139,7 @@ export async function saveMyProfile(fields) {
   const { data, error } = await supabase
     .from("profiles")
     .upsert({ id: uid, ...fields }, { onConflict: "id" })
-    .select("id, first_name, last_name, avatar_url")
+    .select(PROFILE_FIELDS)
     .single();
   if (error) throw new Error(`Couldn't save your name: ${error.message}`);
   return data;
@@ -191,6 +193,7 @@ export async function fetchFavouriteRooms() {
 // image library, no new dependency.
 
 const PHOTO_BUCKET = "room-photos";
+const AVATAR_BUCKET = "avatars";
 
 async function downscale(file, maxEdge = 1200, quality = 0.8) {
   // imageOrientation is explicit so a sideways iPhone photo isn't rendered
@@ -224,21 +227,28 @@ async function downscale(file, maxEdge = 1200, quality = 0.8) {
 
 // Uploads a downscaled JPEG and returns its public URL. Path is
 // {uid}/{uuid}.jpg — the storage policy only lets you write your own folder.
-export async function uploadRoomPhoto(file, maxEdge = 1200) {
+async function uploadImage(bucket, file, maxEdge, quality) {
   if (!file.type.startsWith("image/")) throw new Error("Pick an image file.");
   if (file.size > 15 * 1024 * 1024) throw new Error("That image is too large.");
 
   const uid = await currentUserId();
-  const blob = await downscale(file, maxEdge);
+  const blob = await downscale(file, maxEdge, quality);
   const path = `${uid}/${crypto.randomUUID()}.jpg`;
 
   const { error } = await supabase.storage
-    .from(PHOTO_BUCKET)
+    .from(bucket)
     .upload(path, blob, { contentType: "image/jpeg", upsert: false });
-  if (error) throw new Error(`Couldn't upload the photo: ${error.message}`);
+  if (error) throw new Error(`Couldn't upload the image: ${error.message}`);
 
-  return supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
+
+export const uploadRoomPhoto = (file, maxEdge = 1200) =>
+  uploadImage(PHOTO_BUCKET, file, maxEdge, 0.8);
+
+// Avatars render at most ~72px, so 256 is plenty and lands around 15 KB.
+export const uploadAvatar = (file) =>
+  uploadImage(AVATAR_BUCKET, file, 256, 0.85);
 
 // Best effort: a failed cleanup must never block deleting or editing a room.
 // Note storage.remove() resolves without an error when RLS blocks it, so this

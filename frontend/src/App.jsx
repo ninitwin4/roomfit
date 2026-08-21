@@ -6,6 +6,8 @@ import MyListings from "./components/MyListings.jsx";
 import SavedRooms, { PREFS_KEY } from "./components/SavedRooms.jsx";
 import ResetPassword from "./components/ResetPassword.jsx";
 import NameStep from "./components/NameStep.jsx";
+import ProfileEditor from "./components/ProfileEditor.jsx";
+import Avatar from "./components/Avatar.jsx";
 import { rankRooms, warmUp } from "./api.js";
 import {
   supabase,
@@ -28,6 +30,7 @@ export default function App() {
   // Kept separate from `null` so a lookup failure never traps someone on the
   // name step with no way past it.
   const [profileUnavailable, setProfileUnavailable] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -182,6 +185,17 @@ export default function App() {
 
   return (
     <main className="app">
+      {editingProfile && (
+        <ProfileEditor
+          profile={profile}
+          onSave={(p) => {
+            setProfile(p);
+            setEditingProfile(false);
+          }}
+          onClose={() => setEditingProfile(false)}
+        />
+      )}
+
       {!checkingAuth && !session ? (
         <header className="hero">
           <p className="hero-eyebrow">roomfit</p>
@@ -224,7 +238,18 @@ export default function App() {
           </p>
           {session && (
             <p className="signed-in">
-              {name ?? session.user.email}
+              {name ? (
+                <button
+                  type="button"
+                  className="who"
+                  onClick={() => setEditingProfile(true)}
+                >
+                  <Avatar profile={profile} size={26} />
+                  <span className="who-name">{name}</span>
+                </button>
+              ) : (
+                session.user.email
+              )}
               {" · "}
               <button
                 type="button"
