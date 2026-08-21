@@ -108,6 +108,48 @@ export async function deleteRoom(id) {
   if (error) throw new Error(`Couldn't delete the room: ${error.message}`);
 }
 
+// --- saved / favourite rooms ------------------------------------------------
+// RLS scopes every one of these to the signed-in user, so a favourite is
+// private. Reads fail soft: favourites are an enhancement, and a problem here
+// should never stop someone from matching.
+
+export async function fetchFavouriteIds() {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("favourites")
+    .select("room_id")
+    .eq("user_id", uid);
+  if (error) throw new Error(`Couldn't load your saved rooms: ${error.message}`);
+  return new Set((data ?? []).map((r) => String(r.room_id)));
+}
+
+export async function toggleFavourite(roomId, on) {
+  const uid = await currentUserId();
+  const { error } = on
+    ? await supabase
+        .from("favourites")
+        .upsert({ user_id: uid, room_id: roomId }, { onConflict: "user_id,room_id" })
+    : await supabase
+        .from("favourites")
+        .delete()
+        .eq("user_id", uid)
+        .eq("room_id", roomId);
+  if (error) throw new Error(`Couldn't update your saved rooms: ${error.message}`);
+}
+
+// The full room rows the user has saved, newest save first.
+export async function fetchFavouriteRooms() {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("favourites")
+    .select(`created_at, rooms (${ROOM_FIELDS})`)
+    .eq("user_id", uid)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`Couldn't load your saved rooms: ${error.message}`);
+  // Embedded row is null if the room was deleted mid-flight; drop those.
+  return (data ?? []).map((r) => r.rooms).filter(Boolean);
+}
+
 // --- photos (Phase 1) -------------------------------------------------------
 // Phone photos are 3–5 MB; we downscale in the browser before uploading, which
 // keeps the free tier happy and the app fast on mobile data. Canvas only — no

@@ -199,10 +199,12 @@ body {
 
 .tab {
   flex: 1;
-  padding: 9px 0;
+  min-width: 0; /* three tabs must be allowed to shrink on a narrow phone */
+  padding: 9px 4px;
   font-family: var(--body);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
+  white-space: nowrap;
   color: var(--ink-soft);
   background: transparent;
   border: none;
@@ -255,6 +257,47 @@ body {
 
 .linkish.danger {
   color: var(--fit-low);
+}
+
+/* --- saved rooms --------------------------------------------------------- */
+.card-media {
+  position: relative;
+}
+
+/* Sits over the photo, so it needs its own contrast rather than relying on
+   whatever the image happens to look like underneath. */
+.save-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 120ms ease, color 120ms ease;
+}
+
+.save-btn:hover {
+  transform: scale(1.06);
+}
+
+.save-btn.on {
+  color: var(--fit-low); /* a warm red reads as "kept", not as a score */
+}
+
+.excluded-head {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
 }
 
 /* --- room photos (Phase 1) ----------------------------------------------- */

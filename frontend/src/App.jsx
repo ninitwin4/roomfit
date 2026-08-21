@@ -3,13 +3,20 @@ import PreferenceForm from "./components/PreferenceForm.jsx";
 import RoomCard from "./components/RoomCard.jsx";
 import Auth from "./components/Auth.jsx";
 import MyListings from "./components/MyListings.jsx";
+import SavedRooms, { PREFS_KEY } from "./components/SavedRooms.jsx";
 import { rankRooms, warmUp } from "./api.js";
-import { supabase, fetchRooms } from "./supabase.js";
+import {
+  supabase,
+  fetchRooms,
+  fetchFavouriteIds,
+  toggleFavourite,
+} from "./supabase.js";
 
 export default function App() {
   const [session, setSession] = useState(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [view, setView] = useState("find"); // "find" | "listings"
+  const [view, setView] = useState("find"); // "find" | "saved" | "listings"
+  const [savedIds, setSavedIds] = useState(() => new Set());
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -38,15 +45,57 @@ export default function App() {
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
-      if (!s) setData(null); // clear results on sign out
+      if (!s) {
+        setData(null); // clear results on sign out
+        setSavedIds(new Set());
+      }
     });
 
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Which rooms this user has saved. Fails soft: saving is an enhancement, and
+  // a problem loading it should never block matching.
+  useEffect(() => {
+    if (!session) return;
+    let alive = true;
+    fetchFavouriteIds()
+      .then((ids) => alive && setSavedIds(ids))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [session]);
+
+  // Optimistic: flip the heart immediately, roll back only if the write fails.
+  async function handleToggleSave(roomId, on) {
+    const key = String(roomId);
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      on ? next.add(key) : next.delete(key);
+      return next;
+    });
+    try {
+      await toggleFavourite(roomId, on);
+    } catch {
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        on ? next.delete(key) : next.add(key);
+        return next;
+      });
+    }
+  }
+
   async function handleSubmit(prefs) {
     setLoading(true);
     setError(null);
+    // Remember the last search so the Saved tab can score against it — and so
+    // the form isn't back to defaults next time you open the app.
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    } catch {
+      /* private browsing / quota — not worth failing the match over */
+    }
     try {
       const rooms = await fetchRooms();
       const ranked = await rankRooms(prefs, rooms);
@@ -143,6 +192,13 @@ export default function App() {
             </button>
             <button
               type="button"
+              className={view === "saved" ? "tab active" : "tab"}
+              onClick={() => setView("saved")}
+            >
+              Saved{savedIds.size > 0 ? ` (${savedIds.size})` : ""}
+            </button>
+            <button
+              type="button"
               className={view === "listings" ? "tab active" : "tab"}
               onClick={() => setView("listings")}
             >
@@ -150,7 +206,9 @@ export default function App() {
             </button>
           </nav>
 
-          {view === "listings" ? (
+          {view === "saved" ? (
+            <SavedRooms savedIds={savedIds} onToggleSave={handleToggleSave} />
+          ) : view === "listings" ? (
             <MyListings />
           ) : (
             <>
@@ -225,6 +283,13 @@ export default function App() {
                     ranked={r}
                     defaultOpen={i === 0}
                     hero={i === 0}
+                    saved={savedIds.has(String(r.room.id))}
+                    // no heart on your own listing — you can't save yourself
+                    onToggleSave={
+                      r.room.owner_id && r.room.owner_id === session?.user?.id
+                        ? undefined
+                        : handleToggleSave
+                    }
                   />
                 ))
               )}

@@ -68,7 +68,13 @@ function Gallery({ photos }) {
   );
 }
 
-export default function RoomCard({ ranked, defaultOpen = false, hero = false }) {
+export default function RoomCard({
+  ranked,
+  defaultOpen = false,
+  hero = false,
+  saved = false,
+  onToggleSave, // omitted (e.g. on your own listing) → no heart is rendered
+}) {
   const [open, setOpen] = useState(defaultOpen);
   const { room, total_score, factors } = ranked;
 
@@ -83,7 +89,20 @@ export default function RoomCard({ ranked, defaultOpen = false, hero = false }) 
     <article className={hero ? "card card-hero" : "card"}>
       {/* alt="" on purpose: the title sits directly below, so the images are
           decorative and a real alt would announce the room twice. */}
-      <Gallery photos={photos} />
+      <div className="card-media">
+        <Gallery photos={photos} />
+        {onToggleSave && (
+          <button
+            type="button"
+            className={saved ? "save-btn on" : "save-btn"}
+            aria-pressed={saved}
+            aria-label={saved ? "Remove from saved rooms" : "Save this room"}
+            onClick={() => onToggleSave(room.id, !saved)}
+          >
+            {saved ? "♥" : "♡"}
+          </button>
+        )}
+      </div>
 
       <div className="card-top">
         <div>
