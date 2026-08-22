@@ -134,6 +134,24 @@ pure scoring service with no credentials to leak and nothing to migrate.
 
 ## Backlog — ideas, not commitments
 
+- [ ] **Rescale the budget factor, and make its reason explain itself.**
+      Found while testing: rent $1600 against a $1600 budget scores 12/20, which
+      reads like a bug. It isn't — `CHEAPER_IS_BETTER` means a room at your
+      ceiling leaves nothing over, so it earns the minimum. Two real problems
+      behind it though:
+      1. The reason string ("$1600 vs $1600 max ($0 under)") states the numbers
+         but never the logic, so the receipt fails at the one thing the whole
+         app promises.
+      2. `score = 12 + 8 × headroom` can only reach 20 at a rent of $0. In
+         realistic use ($700–$1600 against $1600) it spans just 12–16, so budget
+         contributes ~4 points of variation while other factors swing a full 20.
+         It's nominally an equal fifth of the score and in practice near-constant.
+      Fix: keep cheaper-is-better, but scale headroom against a "comfortably
+      under" threshold (~25–30% under budget = full marks) with a small floor at
+      the ceiling, so the factor uses its whole range. Threshold becomes a config
+      knob alongside `CHEAPER_IS_BETTER`. Needs a Render redeploy and shifts
+      every existing score, so it is deliberately parked until after the demo.
+
 - [ ] Public shareable listings (opt-in per room, owner profile + social links).
       Specced in detail already.
 - [ ] Live message delivery via Supabase Realtime, and cross-device unread
