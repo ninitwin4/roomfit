@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="roomfit">
+  <!-- Pine green, the app's accent colour. -->
+  <rect width="64" height="64" rx="14" fill="#2f6f4e"/>
+  <!-- A house silhouette: solid shapes read far better than a letter at 16px. -->
+  <path d="M32 13 L55 34 H47 V53 H17 V34 H9 Z" fill="#ffffff"/>
+  <!-- One window, so it isn't a white blob when tiny. -->
+  <rect x="28" y="38" width="8" height="10" rx="1.5" fill="#2f6f4e"/>
+</svg>
