@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchLocations } from "../supabase.js";
+import { fetchLocations, cachedLocations } from "../supabase.js";
 import Scale from "./Scale.jsx";
 
 export default function PreferenceForm({ onSubmit, loading }) {
@@ -16,11 +16,13 @@ export default function PreferenceForm({ onSubmit, loading }) {
   const [locations, setLocations] = useState([]);
   const [locState, setLocState] = useState("loading"); // loading | ready | error
 
-  useEffect(() => {
-    let alive = true;
+  const [locAlive] = useState(() => ({ current: true }));
+
+  function loadAreas() {
+    setLocState("loading");
     fetchLocations()
       .then((list) => {
-        if (!alive) return;
+        if (!locAlive.current) return;
         setLocations(list);
         setLocState("ready");
         // keep the default valid: if "Mission" isn't in the list, use the first
@@ -30,9 +32,27 @@ export default function PreferenceForm({ onSubmit, loading }) {
             : { ...p, location_pref: list[0] ?? p.location_pref }
         );
       })
-      .catch(() => alive && setLocState("error"));
+      .catch((err) => {
+        if (!locAlive.current) return;
+        // Don't swallow it — without this there's no way to tell why the
+        // dropdown fell back, and it has happened more than once.
+        console.error("[roomfit] couldn't load areas:", err);
+        // A previously loaded list beats dropping the user to a bare text box.
+        const cached = cachedLocations();
+        if (cached) {
+          setLocations(cached);
+          setLocState("ready");
+          return;
+        }
+        setLocState("error");
+      });
+  }
+
+  useEffect(() => {
+    locAlive.current = true;
+    loadAreas();
     return () => {
-      alive = false;
+      locAlive.current = false;
     };
   }, []);
 
@@ -82,7 +102,13 @@ export default function PreferenceForm({ onSubmit, loading }) {
         <label htmlFor="location">Where you want to be</label>
         {locState === "error" ? (
           <>
-            <span className="hint">Couldn't load areas — type one instead.</span>
+            <span className="hint">
+              Couldn't load areas —{" "}
+              <button type="button" className="linkish" onClick={loadAreas}>
+                try again
+              </button>{" "}
+              or type one below.
+            </span>
             <input
               id="location"
               type="text"

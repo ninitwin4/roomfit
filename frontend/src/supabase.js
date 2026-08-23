@@ -21,12 +21,49 @@ export async function fetchRooms() {
 // Distinct neighborhoods, for the preference dropdown. Postgres has no cheap
 // DISTINCT through the JS client, so we dedupe the location column here. RLS
 // lets signed-in users read every room, so this covers seed + user listings.
+const LOCATIONS_CACHE = "roomfit:locations";
+
 export async function fetchLocations() {
-  const { data, error } = await supabase.from("rooms").select("location");
-  if (error) throw new Error(`Couldn't load locations: ${error.message}`);
-  return [...new Set((data ?? []).map((r) => r.location))].sort((a, b) =>
-    a.localeCompare(b)
-  );
+  let lastError = null;
+
+  // Two attempts. A request that goes out while the access token is mid-refresh
+  // comes back 401; by the second attempt the new token has landed. Without
+  // this, one unlucky moment on load drops the whole dropdown to a text box.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 600));
+
+    const { data, error } = await supabase.from("rooms").select("location");
+    if (error) {
+      lastError = error;
+      continue;
+    }
+
+    const list = [...new Set((data ?? []).map((r) => r.location))].sort((a, b) =>
+      a.localeCompare(b)
+    );
+    // Remember a good list so a later failure can fall back to it.
+    if (list.length) {
+      try {
+        localStorage.setItem(LOCATIONS_CACHE, JSON.stringify(list));
+      } catch {
+        /* private browsing — the cache is a bonus, not a requirement */
+      }
+    }
+    return list;
+  }
+
+  throw new Error(`Couldn't load locations: ${lastError?.message ?? "unknown"}`);
+}
+
+// The last list we successfully loaded, or null. Lets the form show real areas
+// even when the network call fails.
+export function cachedLocations() {
+  try {
+    const list = JSON.parse(localStorage.getItem(LOCATIONS_CACHE) ?? "null");
+    return Array.isArray(list) && list.length ? list : null;
+  } catch {
+    return null;
+  }
 }
 
 // --- listings (Session B) ---------------------------------------------------
