@@ -55,6 +55,25 @@ frontend (Vercel)  ──reads/writes──▶  Supabase (Postgres + Auth + Stor
 
 Row Level Security is what protects the data: signed-in users can read every listing, but only ever write their own.
 
+### 🛠️ Tech stack
+
+| | |
+|---|---|
+| **Frontend** | React 18 · Vite 5 · plain hand-written CSS |
+| **Backend** | Python · FastAPI · Pydantic · Uvicorn |
+| **Data & auth** | Supabase — Postgres, email/password auth, Row Level Security, Storage |
+| **Deploy** | Vercel (frontend) · Render (backend) |
+
+The dependency list is deliberately tiny and hasn't grown since week one:
+`react`, `react-dom` and `@supabase/supabase-js` on the frontend; `fastapi`,
+`uvicorn` and `pydantic` on the backend. That's all of it.
+
+No router, no state library, no UI kit, no image library. Everything added
+since — browser-side photo downscaling, the swipeable gallery, avatars,
+messaging, the favicon — is built on stock browser APIs: `<canvas>` for
+resizing, `crypto.randomUUID`, CSS scroll-snap, `navigator.share`. Fewer moving
+parts to break, and nothing to keep patched.
+
 ### ✍️ Author
 
 Built by **[Ni Ni (@ninitwin4)](https://github.com/ninitwin4)**.
