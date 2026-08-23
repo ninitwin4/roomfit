@@ -4,6 +4,8 @@ import {
   fetchThread,
   sendMessage,
   fetchProfilesByIds,
+  fetchHiddenThreads,
+  hideThread,
   displayName,
 } from "../supabase.js";
 import { markRead, isUnread } from "../unread.js";
@@ -31,17 +33,38 @@ export default function Messages({ me, openThread, onConsumeOpen, onUnreadChange
   const [people, setPeople] = useState(new Map());
   const [error, setError] = useState(null);
   const [active, setActive] = useState(null); // { roomId, otherId, room }
+  const [confirming, setConfirming] = useState(null); // thread key awaiting confirm
 
   async function loadInbox() {
     setError(null);
     try {
-      const list = await fetchInbox();
+      const [all, hidden] = await Promise.all([
+        fetchInbox(),
+        fetchHiddenThreads().catch(() => new Map()), // hiding is optional
+      ]);
+      // A hidden thread comes back as soon as there's a message newer than the
+      // moment it was hidden, so nothing gets silently swallowed.
+      const list = all.filter((t) => {
+        const hiddenAt = hidden.get(t.key);
+        return !hiddenAt || new Date(t.last.created_at) > new Date(hiddenAt);
+      });
       setThreads(list);
       setPeople(await fetchProfilesByIds(list.map((t) => t.otherId)));
       onUnreadChange?.(list.filter(isUnread).length);
     } catch (err) {
       setError(err.message);
       setThreads([]);
+    }
+  }
+
+  async function confirmHide(t) {
+    setConfirming(null);
+    setThreads((list) => list.filter((x) => x.key !== t.key)); // optimistic
+    try {
+      await hideThread(t.roomId, t.otherId);
+    } catch (err) {
+      setError(err.message);
+      loadInbox(); // put it back if the write failed
     }
   }
 
@@ -109,8 +132,11 @@ export default function Messages({ me, openThread, onConsumeOpen, onUnreadChange
         {threads.map((t) => {
           const person = people.get(t.otherId);
           const unread = isUnread(t);
+
+          // The delete control is a sibling of the row button, not a child —
+          // a button inside a button is invalid HTML and swallows clicks.
           return (
-            <li key={t.key}>
+            <li className="thread-item" key={t.key}>
               <button
                 type="button"
                 className={unread ? "thread-row unread" : "thread-row"}
@@ -121,7 +147,10 @@ export default function Messages({ me, openThread, onConsumeOpen, onUnreadChange
                 <Avatar profile={person} size={44} />
                 <span className="thread-main">
                   <span className="thread-top">
-                    <span className="thread-name">{firstName(person)}</span>
+                    <span className="thread-name">
+                      {firstName(person)}
+                      {unread && <span className="thread-dot" aria-label="Unread" />}
+                    </span>
                     <span className="thread-time">{when(t.last.created_at)}</span>
                   </span>
                   <span className="thread-room">{t.room?.title ?? "a room"}</span>
@@ -130,8 +159,36 @@ export default function Messages({ me, openThread, onConsumeOpen, onUnreadChange
                     {t.last.body}
                   </span>
                 </span>
-                {unread && <span className="thread-dot" aria-label="Unread" />}
               </button>
+
+              {confirming === t.key ? (
+                <div className="thread-confirm">
+                  <span>Remove?</span>
+                  <button
+                    type="button"
+                    className="linkish danger"
+                    onClick={() => confirmHide(t)}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => setConfirming(null)}
+                  >
+                    Keep
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="thread-delete"
+                  aria-label={`Remove conversation with ${firstName(person)}`}
+                  onClick={() => setConfirming(t.key)}
+                >
+                  ✕
+                </button>
+              )}
             </li>
           );
         })}

@@ -223,6 +223,35 @@ export async function fetchInbox() {
   return [...threads.values()];
 }
 
+// Threads this user has hidden, as Map<"roomId:otherId", hiddenAtISO>.
+// The timestamp matters: the inbox brings a thread back once a newer message
+// arrives, so hiding someone can't silently swallow what they send next.
+export async function fetchHiddenThreads() {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("hidden_threads")
+    .select("room_id, other_id, created_at")
+    .eq("user_id", uid);
+  if (error) throw new Error(`Couldn't load your inbox: ${error.message}`);
+  return new Map(
+    (data ?? []).map((h) => [`${h.room_id}:${h.other_id}`, h.created_at])
+  );
+}
+
+export async function hideThread(roomId, otherId) {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("hidden_threads")
+    .upsert(
+      { user_id: uid, room_id: roomId, other_id: otherId, created_at: new Date().toISOString() },
+      { onConflict: "user_id,room_id,other_id" }
+    )
+    .select("created_at")
+    .single();
+  if (error) throw new Error(`Couldn't remove that conversation: ${error.message}`);
+  return data.created_at;
+}
+
 // --- saved / favourite rooms ------------------------------------------------
 // RLS scopes every one of these to the signed-in user, so a favourite is
 // private. Reads fail soft: favourites are an enhancement, and a problem here
