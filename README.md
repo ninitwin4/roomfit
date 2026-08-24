@@ -39,9 +39,9 @@ The scoring is deliberately boring — bounded, capped, and rule-based. That's t
 
 **5 scored factors**, 20 points each → **0–100**: budget fit, location, cleanliness, social level, sleep schedule.
 
-**3 hard filters** that drop a room entirely: over budget, pets needed but not allowed, smoking home when you're not okay with that.
+**3 hard filters** that drop a room entirely: more than 30% over budget, pets needed but not allowed, smoking home when you're not okay with that. Rooms *slightly* over budget are still shown — people do stretch — but scored low and always ranked below anything you can actually afford.
 
-Budget scoring is *cheaper-is-better* — more of your budget left over scores higher. Ties break toward cheaper rent. Full scoring reference in [BUILD_PLAN.md](BUILD_PLAN.md).
+Budget scoring is *cheaper-is-better*, scored across a band: 30% under your budget earns full marks, right at your limit scores about half, and 30% over scores nothing. Ties break toward cheaper rent. Full scoring reference in [BUILD_PLAN.md](BUILD_PLAN.md).
 
 ### 🧱 Architecture
 

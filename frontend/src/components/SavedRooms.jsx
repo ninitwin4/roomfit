@@ -122,6 +122,7 @@ export default function SavedRooms({ savedIds, onToggleSave }) {
           defaultOpen={i === 0}
           hero={i === 0}
           saved={true}
+          overBudget={r.room.rent > state.prefs.budget_max}
           onToggleSave={onToggleSave}
         />
       ))}

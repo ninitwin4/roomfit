@@ -447,7 +447,10 @@ body {
 }
 
 .sample-tag {
-  display: inline-block;
+  /* block so the "Why this score?" button below doesn't flow up beside it,
+     but fit-content so it still hugs the text as a pill */
+  display: block;
+  width: fit-content;
   margin: 12px 0 0;
   padding: 3px 9px;
   font-size: 11px;
@@ -1232,6 +1235,22 @@ select {
 
 .gauge-hero .gauge-cap {
   font-size: 11px;
+}
+
+/* A room shown despite costing more than they said they could pay. Uses the
+   clay "low fit" colour so it reads as a caution, consistent with the ramp. */
+.over-budget-tag {
+  display: inline-block;
+  margin: 6px 0 0;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--fit-low);
+  /* literal rgba rather than color-mix(): color-mix needs Safari 16.2+, and
+     this is a caution badge — not worth a modern-CSS dependency. */
+  background: rgba(168, 86, 74, 0.1);
+  border-radius: 999px;
 }
 
 /* --- the fit receipt: signature element ---------------------------------- */

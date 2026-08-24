@@ -44,11 +44,15 @@ Don't relitigate these without being asked:
 - **Ranking is deterministic.** No LLM in the scoring path.
 - **5 scored factors**, 20 pts each → 0–100: budget fit, location, cleanliness,
   social level, sleep schedule.
-- **3 hard filters** that drop a room entirely: over budget, pets needed but not
-  allowed, smoking home when the seeker isn't OK with it.
-- **Budget scoring is cheaper-is-better** (more budget left over). This was a
-  deliberate flip from "closer to the ceiling" — it's easier to explain to
-  testers. One-line revert: `CHEAPER_IS_BETTER` in `backend/ranking.py`.
+- **3 hard filters** that drop a room entirely: **more than 30% over budget**,
+  pets needed but not allowed, smoking home when the seeker isn't OK with it.
+  Amended: rooms up to 30% over budget are now *shown* (people do stretch),
+  scored low, and always sorted below every affordable room.
+- **Budget scoring is cheaper-is-better** (more budget left over), scored across
+  a band: 30% under earns 20/20, at your limit ~10/20, 30% over 0/20. Replaced
+  `CHEAPER_IS_BETTER`, which could only reach 20/20 at a rent of $0 and so moved
+  the total by ~4 points instead of 20. Knobs: `BUDGET_COMFORT` and
+  `BUDGET_STRETCH` in `backend/ranking.py`.
 - **Single role.** Every user both sets preferences and can post a listing. No
   seeker/lister split.
 - **Hybrid listings.** 12 seed rooms (`owner_id` null) so the app is never

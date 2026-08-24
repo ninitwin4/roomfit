@@ -75,6 +75,7 @@ export default function RoomCard({
   hero = false,
   saved = false,
   onToggleSave, // omitted (e.g. on your own listing) → no heart is rendered
+  overBudget = false, // shown but priced above what they said they can pay
   owner, // the owner's profile, when the room has one
   onMessage, // omitted on your own room, and on ownerless seed rooms
 }) {
@@ -113,6 +114,9 @@ export default function RoomCard({
           <p className="room-meta">
             ${room.rent}/mo · {room.location}
           </p>
+          {/* These sort below every affordable room, but say so on the card —
+              finding out only by opening the receipt is a nasty surprise. */}
+          {overBudget && <p className="over-budget-tag">Over your budget</p>}
         </div>
         <Gauge score={total_score} hero={hero} />
       </div>

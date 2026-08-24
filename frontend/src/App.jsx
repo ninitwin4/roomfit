@@ -40,6 +40,7 @@ export default function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [slow, setSlow] = useState(false);
+  const [lastPrefs, setLastPrefs] = useState(null); // to flag over-budget results
   const [error, setError] = useState(null);
 
   // A match is ~140ms warm. If it's taking seconds, the free-tier backend is
@@ -154,6 +155,7 @@ export default function App() {
     setError(null);
     // Remember the last search so the Saved tab can score against it — and so
     // the form isn't back to defaults next time you open the app.
+    setLastPrefs(prefs);
     try {
       localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
     } catch {
@@ -415,6 +417,9 @@ export default function App() {
                     defaultOpen={i === 0}
                     hero={i === 0}
                     saved={savedIds.has(String(r.room.id))}
+                    overBudget={
+                      !!lastPrefs && r.room.rent > lastPrefs.budget_max
+                    }
                     owner={owners.get(r.room.owner_id)}
                     onMessage={
                       r.room.owner_id && r.room.owner_id !== session?.user?.id
