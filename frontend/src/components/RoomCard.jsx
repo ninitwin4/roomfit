@@ -117,6 +117,12 @@ export default function RoomCard({
           {/* These sort below every affordable room, but say so on the card —
               finding out only by opening the receipt is a nasty surprise. */}
           {overBudget && <p className="over-budget-tag">Over your budget</p>}
+          {/* Only admins ever get inactive rooms back from a search, and only
+              when they ask for them. Say so, so they're never mistaken for
+              what everyone else sees. */}
+          {room.active === false && (
+            <p className="status-tag">Inactive · hidden from search</p>
+          )}
         </div>
         <Gauge score={total_score} hero={hero} />
       </div>

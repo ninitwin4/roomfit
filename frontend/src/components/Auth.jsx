@@ -6,8 +6,11 @@ import { supabase } from "../supabase.js";
 // Redirect URLs in the Supabase dashboard, or the link bounces.
 const RESET_REDIRECT = `${window.location.origin}/`;
 
-export default function Auth() {
-  const [mode, setMode] = useState("signin"); // "signin" | "signup" | "forgot"
+// `claiming` is true when they arrived through a claim link. Most of those
+// people are new, so the form opens on "Create account" — with sign in one tap
+// away for anyone who already has one.
+export default function Auth({ claiming = false }) {
+  const [mode, setMode] = useState(claiming ? "signup" : "signin"); // "signin" | "signup" | "forgot"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -69,6 +72,14 @@ export default function Auth() {
 
   return (
     <div className="panel">
+      {claiming && !isForgot && (
+        <p className="claim-banner">
+          {isSignup
+            ? "Create an account to claim your listing. It only takes a moment."
+            : "Sign in to claim your listing."}
+        </p>
+      )}
+
       {isForgot && (
         <>
           <h2 className="form-title">Reset your password</h2>

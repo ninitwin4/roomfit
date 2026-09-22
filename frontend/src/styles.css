@@ -277,6 +277,150 @@ body {
   color: var(--fit-low);
 }
 
+.linkish:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* --- claimable listings (admin + claim flow) ----------------------------- */
+/* "Paused" / "Inactive": neutral, not the clay caution colour — hiding a
+   listing is a choice, not a problem. */
+.status-tag {
+  display: block;
+  width: fit-content;
+  margin: 6px 0 0;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+/* Admin-only controls sit in a dashed box, so it's obvious at a glance that
+   nobody else sees them. */
+.admin-block {
+  margin: 0 0 22px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.admin-block-top {
+  margin-bottom: 18px;
+}
+
+.admin-field {
+  margin: 14px 0 0;
+}
+
+.admin-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.admin-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.admin-row-main {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.link-status {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* The one-line explainer at the top of the claim screen and sign-up. */
+.claim-banner {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  background: rgba(47, 111, 78, 0.07);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+}
+
+.claim-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.notice.notice-ok {
+  border-left-color: var(--fit-high);
+  margin-bottom: 14px;
+}
+
+/* share sheet: no Save button, so a spacer keeps the title centred */
+.sheet-spacer {
+  width: 32px;
+}
+
+.share-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-meta {
+  margin: 6px 0 0;
+}
+
+.share-foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.share-close {
+  margin-left: auto;
+}
+
+.copy-row {
+  display: flex;
+  gap: 8px;
+}
+
+.copy-row input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--data);
+  font-size: 13px;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  min-width: 72px;
+  padding: 0 12px;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--accent);
+  text-decoration: none;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
 /* --- avatars + profile sheet --------------------------------------------- */
 .avatar {
   display: inline-grid;

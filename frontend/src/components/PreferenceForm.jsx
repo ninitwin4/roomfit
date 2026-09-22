@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { fetchLocations, cachedLocations } from "../supabase.js";
 import Scale from "./Scale.jsx";
 
-export default function PreferenceForm({ onSubmit, loading }) {
+export default function PreferenceForm({ onSubmit, loading, isAdmin = false }) {
+  // Admin-only, and deliberately not part of prefs: prefs are remembered
+  // between visits, but this starts unticked every time, so an admin never
+  // forgets it's on and mistakes the results for what everyone else sees.
+  const [includeInactive, setIncludeInactive] = useState(false);
   const [prefs, setPrefs] = useState({
     budget_max: 1000,
     location_pref: "Mission",
@@ -60,6 +64,20 @@ export default function PreferenceForm({ onSubmit, loading }) {
 
   return (
     <div className="panel">
+      {isAdmin && (
+        <div className="admin-block admin-block-top">
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={includeInactive}
+              onChange={(e) => setIncludeInactive(e.target.checked)}
+            />
+            Include inactive rooms
+          </label>
+          <span className="admin-hint">Admin feature</span>
+        </div>
+      )}
+
       <div className="field">
         <label htmlFor="budget">Monthly budget</label>
         <span className="hint">Rooms above this are ruled out entirely.</span>
@@ -199,7 +217,7 @@ export default function PreferenceForm({ onSubmit, loading }) {
         type="button"
         className="submit"
         disabled={loading}
-        onClick={() => onSubmit(prefs)}
+        onClick={() => onSubmit(prefs, { includeInactive: isAdmin && includeInactive })}
       >
         {loading ? "Ranking rooms…" : "Find my fit"}
       </button>
