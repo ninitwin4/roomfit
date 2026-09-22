@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Avatar from "./Avatar.jsx";
 
 // One ramp, used for both the total score and each factor bar, so the color
@@ -80,7 +81,28 @@ export default function RoomCard({
   onMessage, // omitted on your own room, and on ownerless seed rooms
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const [descOpen, setDescOpen] = useState(false); // closed on every card, top match included
+  const toggleRow = useRef(null);
   const { room, total_score, factors } = ranked;
+  const description = room.description?.trim();
+
+  // Opening adds content above the buttons, and the page stays put, so you
+  // read it from the top. Collapsing removes content above the buttons — with
+  // a long description that would fling the card up off screen — so after a
+  // collapse, scroll by however far the buttons moved to keep them under your
+  // finger. Browsers that already anchor the scroll measure ~0 and do nothing.
+  function toggle(setter, isOpen) {
+    if (!isOpen) {
+      setter(true);
+      return;
+    }
+    const before = toggleRow.current?.getBoundingClientRect().top;
+    flushSync(() => setter(false));
+    const after = toggleRow.current?.getBoundingClientRect().top;
+    if (before != null && after != null && Math.abs(after - before) > 1) {
+      window.scrollBy(0, after - before);
+    }
+  }
 
   // photo_url is the pre-photos[] fallback, kept in sync as the cover.
   const photos = room.photos?.length
@@ -149,6 +171,10 @@ export default function RoomCard({
         <p className="sample-tag">Sample listing</p>
       )}
 
+      {/* Plain text only: React escapes it, and pre-line keeps the line
+          breaks and "- " lists that listing posts are written in. */}
+      {description && descOpen && <div className="room-desc">{description}</div>}
+
       {open && (
         <div className="receipt">
           {factors.map((f) => {
@@ -171,14 +197,27 @@ export default function RoomCard({
         </div>
       )}
 
-      <button
-        type="button"
-        className="toggle"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-      >
-        {open ? "Hide the breakdown" : "Why this score?"}
-      </button>
+      {/* No description, no Description button — just "Why this score?". */}
+      <div className="toggle-row" ref={toggleRow}>
+        {description && (
+          <button
+            type="button"
+            className="toggle"
+            aria-expanded={descOpen}
+            onClick={() => toggle(setDescOpen, descOpen)}
+          >
+            {descOpen ? "Hide description" : "Description"}
+          </button>
+        )}
+        <button
+          type="button"
+          className="toggle"
+          aria-expanded={open}
+          onClick={() => toggle(setOpen, open)}
+        >
+          {open ? "Hide the breakdown" : "Why this score?"}
+        </button>
+      </div>
     </article>
   );
 }

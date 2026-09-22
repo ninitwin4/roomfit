@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { fetchLocations, uploadRoomPhoto } from "../supabase.js";
+import { fetchLocations, uploadRoomPhoto, DESCRIPTION_MAX } from "../supabase.js";
 import Scale from "./Scale.jsx";
 
 const BLANK = {
   title: "",
   rent: 900,
   location: "",
+  description: "",
   cleanliness: 3,
   social_level: 3,
   sleep_schedule: "flexible",
@@ -224,6 +225,23 @@ export default function RoomForm({
             <option key={a} value={a} />
           ))}
         </datalist>
+      </div>
+
+      <div className="field">
+        <label htmlFor="room-description">Description (optional)</label>
+        <span className="hint">
+          What's the room like, who lives there, what's nearby.
+        </span>
+        <textarea
+          id="room-description"
+          rows={6}
+          maxLength={DESCRIPTION_MAX}
+          value={room.description ?? ""}
+          onChange={(e) => set("description", e.target.value)}
+        />
+        <span className="char-count">
+          {(room.description ?? "").length} / {DESCRIPTION_MAX}
+        </span>
       </div>
 
       <div className="field">

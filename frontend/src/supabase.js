@@ -8,7 +8,7 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = createClient(url, anonKey);
 
 const ROOM_FIELDS =
-  "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos, active";
+  "id, title, rent, location, description, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos, active";
 
 // Rooms for the Find tab. RLS decides what you MAY read (active rooms, your own,
 // and everything for admins); this decides what the search SHOWS: active rooms
@@ -94,6 +94,7 @@ const WRITABLE = [
   "title",
   "rent",
   "location",
+  "description",
   "cleanliness",
   "social_level",
   "sleep_schedule",
@@ -103,9 +104,21 @@ const WRITABLE = [
   "active",
 ];
 
+export const DESCRIPTION_MAX = 2000; // matches the check in 12_descriptions.sql
+
+// Posts copied from another site often end with that site's "See less" button
+// text. Drop it, and store a blank description as null so the card shows no
+// Description button for it.
+function cleanDescription(text) {
+  if (text == null) return null;
+  const cleaned = String(text).replace(/\s*see less\s*$/i, "").trim();
+  return cleaned || null;
+}
+
 function writable(room) {
   const out = {};
   for (const k of WRITABLE) if (k in room) out[k] = room[k];
+  if ("description" in out) out.description = cleanDescription(out.description);
   // Keep the legacy single-cover column in sync with photos[0]. Derived in one
   // place so the two can't drift, and it keeps photo_url a valid fallback until
   // it's dropped in a later migration.
@@ -257,9 +270,7 @@ async function copyPhotosToMyFolder(photos) {
 // fails nothing is claimed, and Accept can simply be tapped again.
 export async function acceptClaim(token, room) {
   const photos = await copyPhotosToMyFolder(room.photos);
-  const payload = {};
-  for (const k of WRITABLE) if (k in room) payload[k] = room[k];
-  payload.photos = photos;
+  const payload = { ...writable(room), photos };
   const { data, error } = await supabase.rpc("claim_room", {
     p_token: token,
     p_room: payload,

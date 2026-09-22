@@ -1036,6 +1036,28 @@ body {
   margin-bottom: 8px;
 }
 
+textarea {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  font-family: var(--body);
+  font-size: 16px; /* 16px stops iOS zooming in on focus */
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+
+.char-count {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-align: right;
+}
+
 input[type="number"],
 input[type="text"],
 select {
@@ -1478,6 +1500,30 @@ select {
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
+}
+
+/* Description + "Why this score?" share one row; with no description the
+   breakdown button sits alone on the left, exactly where it always has. */
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.toggle-row .toggle {
+  margin-top: 0;
+}
+
+.room-desc {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 /* --- states -------------------------------------------------------------- */

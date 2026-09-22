@@ -107,7 +107,8 @@ frontend/src/
   components/
     Auth.jsx           email + password sign in / sign up
     PreferenceForm.jsx the search form
-    RoomCard.jsx       the fit receipt — gauge, gallery, factor bars, heart
+    RoomCard.jsx       the fit receipt — gauge, gallery, factor bars, heart,
+                       Description toggle (display-only, never scored)
     RoomForm.jsx       add / edit / claim a listing, photo upload, admin fields
     MyListings.jsx     your own rooms: edit, pause, delete; claim screen;
                        admin claim links + share sheet
@@ -132,6 +133,7 @@ supabase/              run in numerical order
   09_hidden_threads.sql  remove a conversation from your own inbox
   10_roles.sql         profiles.role + trigger so nobody promotes themselves
   11_claims.sql        rooms.active, room_sources, claim_links + claim functions
+  12_descriptions.sql  rooms.description (optional, 2,000 chars), carried by claims
   undo/                one undo script per migration from 10 on
 render.yaml            backend deploy blueprint
 ```
