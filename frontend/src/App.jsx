@@ -281,7 +281,12 @@ export default function App() {
       {!checkingAuth && !session ? (
         <header className="hero">
           <p className="hero-eyebrow">roomfit</p>
-          <h1 className="hero-title">Welcome to roomfit</h1>
+          {/* The eyebrow above already says roomfit, so the headline is free to
+              say what the app does. The italic is the point: EB Garamond's is
+              calligraphic, and it lands on the word the product turns on. */}
+          <h1 className="hero-title">
+            Find a room that <em>fits</em>.
+          </h1>
           <p className="hero-lede">
             Rooms ranked by how well they actually fit you — with the receipt to
             prove it.
@@ -295,9 +300,13 @@ export default function App() {
               See exactly <strong>why</strong> a room ranked where it did,{" "}
               <span className="nobreak">not just a number.</span>
             </li>
+            {/* The hero shows for every signed-out visitor, a lister opening a
+                claim link included — so one bullet is theirs. It promises only
+                what the engine does: ranking is seeker → room, so a lister
+                never gets ranked candidates, just people who already fit. */}
             <li className="value-prop">
-              Set your budget and must-haves; we rule out dealbreakers and rank
-              the rest.
+              Listing a room? Anyone who messages you has{" "}
+              <strong>already been scored</strong> against it.
             </li>
           </ul>
           <p className="scroll-cue">Sign in to start ↓</p>

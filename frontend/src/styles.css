@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
    roomfit — design tokens
 
-   Direction: a clean white brief with a single pine-green accent. The scoring
+   Direction: a warm cream brief with a single pine-green accent. The scoring
    ramp (green -> amber -> clay) still carries all the meaning; the accent is
    the same green as "high fit", tying the brand to a good match. The signature
    element is the "fit receipt": the score breakdown that shows *why* a room
@@ -9,12 +9,18 @@
 --------------------------------------------------------------------------- */
 
 :root {
-  --paper: #ffffff;
-  --surface: #fbfbfa;
+  /* A warm cream ground, with cards left pure white so they still lift off it —
+     the fit receipt should read as an object on the page, not as more page.
+     --ink-soft is darkened from #6b756e, which measures 4.8:1 on white but only
+     4.2:1 here: under AA, and it carries every hint, factor reason and room
+     meta line in the app. #667069 restores 4.5:1. If the ground is ever warmed
+     further, that token has to move again with it. */
+  --paper: #f4f1e5;
+  --surface: #f1ecdb;
   --card: #ffffff;
   --ink: #191c1a;
-  --ink-soft: #6b756e;
-  --line: #ececeb;
+  --ink-soft: #667069;
+  --line: #e3decb;
 
   /* single accent — same value as --fit-high, so "good fit" reads everywhere */
   --accent: #2f6f4e;
