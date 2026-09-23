@@ -117,9 +117,9 @@ export default function RoomForm({
 
       {claiming && (
         <p className="claim-banner">
-          We've set up this listing from the post you shared with us. Check the
-          details, make any changes, then tap <strong>Accept and publish</strong>{" "}
-          at the bottom.
+          We've filled in what your post said. You pick the housemate you're
+          after: tidiness, social level, hours. Seekers get scored against it,
+          and you against theirs.
         </p>
       )}
 
