@@ -292,8 +292,8 @@ export default function App() {
               factors behind its score.
             </li>
             <li className="value-prop">
-              See exactly <strong>why</strong> a room ranked where it did, not
-              just a number.
+              See exactly <strong>why</strong> a room ranked where it did,{" "}
+              <span className="nobreak">not just a number.</span>
             </li>
             <li className="value-prop">
               Set your budget and must-haves; we rule out dealbreakers and rank

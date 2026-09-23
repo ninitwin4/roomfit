@@ -26,8 +26,14 @@
   --fit-mid: #c08a2e;
   --fit-low: #a8564a;
 
-  --display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --body: "Karla", ui-sans-serif, system-ui, sans-serif;
+  /* Display is the serif, and it is deliberately rationed: the welcome hero
+     and the wordmark, nothing else. A high-contrast serif carries a page at
+     40px and falls apart at 17px — thin strokes lighten until a room title
+     stops out-ranking the grey line beneath it. So every heading small enough
+     to be scanned rather than read uses --ui instead. */
+  --display: "EB Garamond", ui-serif, Georgia, serif;
+  --ui: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --data: "JetBrains Mono", ui-monospace, monospace;
 
   --radius: 14px;
@@ -60,11 +66,14 @@ body {
   margin-bottom: 20px;
 }
 
+/* Serif, like the hero — the wordmark is the brand showing up on every screen,
+   and at 32px it's big enough to carry it. Serifs are drawn with their own
+   fitting, so the tight negative tracking the old grotesque wanted comes off. */
 .wordmark {
   font-family: var(--display);
-  font-weight: 800;
-  font-size: 30px;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  font-size: 32px;
+  letter-spacing: -0.005em;
   margin: 0;
 }
 
@@ -105,12 +114,16 @@ body {
   margin: 0 0 14px;
 }
 
+/* The one true display moment in the app. 44px rather than the old 40: a
+   serif sets optically smaller than a grotesque at the same size, because more
+   of the em goes to ascenders and descenders. Line height loosens for the same
+   reason — 1.02 was fine for a grotesque and crowds Garamond's descenders. */
 .hero-title {
   font-family: var(--display);
-  font-weight: 800;
-  font-size: 40px;
-  line-height: 1.02;
-  letter-spacing: -0.035em;
+  font-weight: 600;
+  font-size: 44px;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
@@ -153,6 +166,13 @@ body {
   font-weight: 600;
 }
 
+/* Keeps a closing phrase whole so a line can't end on a lone "a number." The
+   bullet is one thought, and a widow makes the reader assemble it. Short
+   phrases only — nowrap can't break, so anything long would overflow. */
+.nobreak {
+  white-space: nowrap;
+}
+
 .scroll-cue {
   margin: 30px 0 6px;
   font-size: 13px;
@@ -185,7 +205,7 @@ body {
 }
 
 .loading-title {
-  font-family: var(--display);
+  font-family: var(--ui);
   font-weight: 700;
   font-size: 19px;
   letter-spacing: -0.01em;
@@ -232,7 +252,7 @@ body {
 
 /* --- listings (Session B) ------------------------------------------------ */
 .form-title {
-  font-family: var(--display);
+  font-family: var(--ui);
   font-weight: 700;
   font-size: 20px;
   letter-spacing: -0.02em;
@@ -439,7 +459,7 @@ body {
 }
 
 .avatar-initials {
-  font-family: var(--display);
+  font-family: var(--ui);
   font-weight: 700;
   line-height: 1;
   user-select: none;
@@ -499,7 +519,7 @@ body {
 }
 
 .sheet-title {
-  font-family: var(--display);
+  font-family: var(--ui);
   font-weight: 700;
   font-size: 16px;
 }
@@ -516,7 +536,7 @@ body {
 
 .sheet-save {
   padding: 8px 16px;
-  font-family: var(--display);
+  font-family: var(--ui);
   font-weight: 700;
   font-size: 14px;
   color: var(--accent-ink);
@@ -555,7 +575,7 @@ body {
   place-items: center;
   width: 52px;
   height: 52px;
-  font-family: var(--display);
+  font-family: var(--ui);
   font-weight: 700;
   font-size: 20px;
   background: var(--surface);
@@ -1284,7 +1304,7 @@ select {
 .submit {
   width: 100%;
   padding: 14px;
-  font-family: var(--display);
+  font-family: var(--ui);
   font-weight: 700;
   font-size: 16px;
   letter-spacing: -0.01em;
@@ -1322,7 +1342,7 @@ select {
 }
 
 .results-count {
-  font-family: var(--display);
+  font-family: var(--ui);
   font-weight: 700;
   font-size: 19px;
   letter-spacing: -0.02em;
@@ -1352,7 +1372,7 @@ select {
 }
 
 .room-title {
-  font-family: var(--display);
+  font-family: var(--ui);
   font-weight: 700;
   font-size: 17px;
   line-height: 1.25;
