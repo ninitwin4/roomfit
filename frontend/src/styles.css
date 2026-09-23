@@ -400,6 +400,13 @@ body {
 .copy-row input {
   flex: 1;
   min-width: 0;
+}
+
+/* Typed with [type="text"] on purpose: the generic input[type="text"] rule is
+   declared later in this file, and at equal specificity that one wins on source
+   order — so a plain `.copy-row input` sets the link in the body font at 16px.
+   Same trap as the .composer-send rule below. */
+.copy-row input[type="text"] {
   font-family: var(--data);
   font-size: 13px;
 }
@@ -1222,6 +1229,27 @@ select {
   height: 8px;
   background: var(--ink);
   transform: translateX(-50%) rotate(45deg);
+}
+
+/* Claim flow: a lifestyle question nobody has answered yet. A range input
+   always sits on some number, so an untouched slider would otherwise read as a
+   deliberate choice. Drop the accent fill and the number, so "not answered"
+   looks nothing like "answered 3". */
+.range-wrap.is-unset .range {
+  background: var(--line);
+}
+
+.range-wrap.is-unset .range::-webkit-slider-thumb {
+  border-color: var(--ink-soft);
+}
+
+.range-wrap.is-unset .range::-moz-range-thumb {
+  border-color: var(--ink-soft);
+}
+
+.range-wrap.is-unset .range-bubble,
+.range-wrap.is-unset .range-bubble::after {
+  background: var(--ink-soft);
 }
 
 .scale-ends {

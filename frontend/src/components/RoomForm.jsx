@@ -21,6 +21,14 @@ const MAX_PHOTOS = 5;
 // Blank is fine (it's optional); anything else must be a web address.
 const isValidLink = (s) => !s.trim() || /^https?:\/\/\S+$/i.test(s.trim());
 
+// The three things a public post can never tell us, and the whole reason the
+// claim screen exists. They arrive pre-filled from the admin's draft, and the
+// columns are NOT NULL, so "unanswered" can only ever be a state in this form —
+// never a value in the database. Without asking for them deliberately, an owner
+// can publish the middle of every scale without noticing, and nothing
+// afterwards can tell that apart from a considered answer.
+const LIFESTYLE = ["cleanliness", "social_level", "sleep_schedule"];
+
 // Add, edit, or claim one room. `initial` is a room to edit or claim, or null to
 // add a new one. `mode` is "add" | "edit" | "claim".
 //
@@ -48,6 +56,9 @@ export default function RoomForm({
   const [areas, setAreas] = useState([]);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState(null);
+  // Which lifestyle questions the claimer has actually answered. Only ever
+  // consulted in claim mode — adding and editing are unchanged.
+  const [answered, setAnswered] = useState(() => new Set());
 
   useEffect(() => {
     let alive = true;
@@ -60,10 +71,24 @@ export default function RoomForm({
   }, []);
 
   const set = (key, value) => setRoom((r) => ({ ...r, [key]: value }));
+
+  const answer = (key) =>
+    setAnswered((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+  const setLifestyle = (key, value) => {
+    set(key, value);
+    answer(key);
+  };
+  const unanswered = (key) => claiming && !answered.has(key);
+  const lifestyleDone = !claiming || LIFESTYLE.every((k) => answered.has(k));
+
   const showAdmin = isAdmin && !claiming;
   const linkOk = !showAdmin || isValidLink(room.source_url ?? "");
   const valid =
-    room.title.trim() && room.location.trim() && room.rent >= 0 && linkOk;
+    room.title.trim() &&
+    room.location.trim() &&
+    room.rent >= 0 &&
+    linkOk &&
+    lifestyleDone;
   const photos = room.photos ?? [];
 
   // Upload on select rather than on save, so by the time you hit Save the
@@ -248,12 +273,15 @@ export default function RoomForm({
         <span className="field-label" id="room-tidy-label">
           How tidy the place is
         </span>
+        {unanswered("cleanliness") && <span className="hint">Not set yet</span>}
         <Scale
           value={room.cleanliness}
           low="Relaxed"
           high="Spotless"
           labelId="room-tidy-label"
-          onChange={(v) => set("cleanliness", v)}
+          unset={unanswered("cleanliness")}
+          onInteract={() => answer("cleanliness")}
+          onChange={(v) => setLifestyle("cleanliness", v)}
         />
       </div>
 
@@ -261,12 +289,15 @@ export default function RoomForm({
         <span className="field-label" id="room-social-label">
           How social the home is
         </span>
+        {unanswered("social_level") && <span className="hint">Not set yet</span>}
         <Scale
           value={room.social_level}
           low="Quiet"
           high="Very social"
           labelId="room-social-label"
-          onChange={(v) => set("social_level", v)}
+          unset={unanswered("social_level")}
+          onInteract={() => answer("social_level")}
+          onChange={(v) => setLifestyle("social_level", v)}
         />
       </div>
 
@@ -274,9 +305,17 @@ export default function RoomForm({
         <label htmlFor="room-sleep">Household hours</label>
         <select
           id="room-sleep"
-          value={room.sleep_schedule}
-          onChange={(e) => set("sleep_schedule", e.target.value)}
+          value={unanswered("sleep_schedule") ? "" : room.sleep_schedule}
+          onChange={(e) => {
+            // Re-picking the placeholder isn't an answer, and "" would fail the
+            // column's check constraint. Ignore it rather than storing it.
+            if (!e.target.value) return;
+            setLifestyle("sleep_schedule", e.target.value);
+          }}
         >
+          {unanswered("sleep_schedule") && (
+            <option value="">Choose one…</option>
+          )}
           <option value="early">Early risers</option>
           <option value="late">Night owls</option>
           <option value="flexible">Flexible</option>
@@ -345,7 +384,9 @@ export default function RoomForm({
       <div className="form-actions">
         {claiming && (
           <p className="claim-note">
-            This confirms it's your room and makes it visible on RoomFit.
+            {lifestyleDone
+              ? "This confirms it's your room and makes it visible on RoomFit."
+              : "Set tidiness, social level and hours to publish — they're what seekers are matched on."}
           </p>
         )}
         <button
