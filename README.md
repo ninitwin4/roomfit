@@ -138,7 +138,7 @@ npm install
 npm run dev                        # http://localhost:5173
 ```
 
-To point at your own Supabase project, run the SQL files in `supabase/` in numerical order (`01_schema.sql` → `08_messages.sql`).
+To point at your own Supabase project, run the SQL files in `supabase/` in numerical order (`01_schema.sql` → `12_descriptions.sql`). Each file from `10` on has an undo script in `supabase/undo/`. To make someone an admin, set their `role` to `admin` in Table Editor → `profiles`.
 
 ---
 
@@ -153,6 +153,9 @@ To point at your own Supabase project, run the SQL files in `supabase/` in numer
 | ✅ | Saved rooms — heart a match, re-ranked against your latest preferences |
 | ✅ | Profiles — names and avatars (photo or coloured initials) |
 | ✅ | In-app messaging between seekers and room owners |
+| ✅ | Pause and re-show your own listings |
+| ✅ | Optional listing descriptions, shown behind a toggle on each card |
+| ✅ | Admin tools — hidden listings, original post links, one-time claim links for owners |
 | ✅ | 3 real testers; first feedback round shipped |
 
 ---

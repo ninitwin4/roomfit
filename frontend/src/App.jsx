@@ -18,10 +18,42 @@ import {
   fetchMyProfile,
   fetchProfilesByIds,
   displayName,
+  CLAIM_PARAM,
 } from "./supabase.js";
+
+// A claim link is /?claim=<token>. The token has to survive sign-up and the
+// name step, so it's kept in localStorage until the claim is accepted or
+// cancelled, and taken out of the address bar straight away.
+const CLAIM_KEY = "roomfit:claim";
+
+function readClaimToken() {
+  try {
+    const url = new URL(window.location.href);
+    const fromUrl = url.searchParams.get(CLAIM_PARAM);
+    if (fromUrl) {
+      localStorage.setItem(CLAIM_KEY, fromUrl);
+      url.searchParams.delete(CLAIM_PARAM);
+      window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+      return fromUrl;
+    }
+    return localStorage.getItem(CLAIM_KEY);
+  } catch {
+    // private browsing: fall back to whatever the address bar has
+    return new URLSearchParams(window.location.search).get(CLAIM_PARAM);
+  }
+}
+
+function clearClaimToken() {
+  try {
+    localStorage.removeItem(CLAIM_KEY);
+  } catch {
+    /* nothing stored, nothing to clear */
+  }
+}
 
 export default function App() {
   const [session, setSession] = useState(null);
+  const [claimToken, setClaimToken] = useState(readClaimToken);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [view, setView] = useState("find"); // "find" | "saved" | "listings"
   const [savedIds, setSavedIds] = useState(() => new Set());
@@ -72,6 +104,12 @@ export default function App() {
       if (!s) {
         setData(null); // clear results on sign out
         setSavedIds(new Set());
+      }
+      // A pending claim belongs to whoever opened the link, not to the next
+      // person to sign in on this device.
+      if (event === "SIGNED_OUT") {
+        clearClaimToken();
+        setClaimToken(null);
       }
     });
 
@@ -150,7 +188,7 @@ export default function App() {
     }
   }
 
-  async function handleSubmit(prefs) {
+  async function handleSubmit(prefs, { includeInactive = false } = {}) {
     setLoading(true);
     setError(null);
     // Remember the last search so the Saved tab can score against it — and so
@@ -162,7 +200,7 @@ export default function App() {
       /* private browsing / quota — not worth failing the match over */
     }
     try {
-      const rooms = await fetchRooms();
+      const rooms = await fetchRooms({ includeInactive });
       const ranked = await rankRooms(prefs, rooms);
 
       // The backend echoes back only the fields its scoring model declares, so
@@ -212,6 +250,20 @@ export default function App() {
   const name = displayName(profile);
   // Ask for a name only once we know for certain there isn't one on file.
   const needsName = !!session && profile === null && !profileUnavailable;
+  // Shows admin controls. It's presentation only — every admin action is
+  // checked again in the database.
+  const isAdmin = profile?.role === "admin";
+
+  // Arriving through a claim link: once signed in (and past the name step),
+  // go straight to the Listings tab, where the claim screen is waiting.
+  useEffect(() => {
+    if (claimToken && session && !needsName) setView("listings");
+  }, [claimToken, session, needsName]);
+
+  function finishClaim() {
+    clearClaimToken();
+    setClaimToken(null);
+  }
 
   return (
     <main className="app">
@@ -296,7 +348,7 @@ export default function App() {
       {checkingAuth ? null : recovering ? (
         <ResetPassword onDone={() => setRecovering(false)} />
       ) : !session ? (
-        <Auth />
+        <Auth claiming={!!claimToken} />
       ) : needsName ? (
         <NameStep onDone={(p) => setProfile(p)} />
       ) : (
@@ -342,7 +394,11 @@ export default function App() {
           ) : view === "saved" ? (
             <SavedRooms savedIds={savedIds} onToggleSave={handleToggleSave} />
           ) : view === "listings" ? (
-            <MyListings />
+            <MyListings
+              isAdmin={isAdmin}
+              claimToken={claimToken}
+              onClaimDone={finishClaim}
+            />
           ) : (
             <>
               {loading && (
@@ -358,7 +414,11 @@ export default function App() {
               )}
 
               {!loading && !data && !error && (
-                <PreferenceForm onSubmit={handleSubmit} loading={loading} />
+                <PreferenceForm
+                  onSubmit={handleSubmit}
+                  loading={loading}
+                  isAdmin={isAdmin}
+                />
               )}
 
           {error && (

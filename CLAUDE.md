@@ -54,7 +54,16 @@ Don't relitigate these without being asked:
   the total by ~4 points instead of 20. Knobs: `BUDGET_COMFORT` and
   `BUDGET_STRETCH` in `backend/ranking.py`.
 - **Single role.** Every user both sets preferences and can post a listing. No
-  seeker/lister split.
+  seeker/lister split. Amended: there is now an **admin** role
+  (`profiles.role`), set by hand in the Supabase dashboard and never from the
+  app (a trigger blocks it). Admins get operator tools — hidden listings,
+  original post links, claim links — but still no seeker/lister split.
+- **Claimable listings.** Admins copy a room from another site (with the
+  owner's permission) as an inactive listing, then send a one-time claim link
+  (`/?claim=<token>`, 14 days). The owner signs up or in, can edit everything,
+  and on Accept becomes the owner and the listing goes live. Claiming happens
+  only in the `claim_room` database function; photos are copied into the
+  claimer's folder on Supabase's servers. Owners can pause their own listings.
 - **Hybrid listings.** 12 seed rooms (`owner_id` null) so the app is never
   empty, plus user-submitted rooms on top. Same schema for both.
 - **The fit receipt is the product.** Every result shows its per-factor
@@ -98,9 +107,11 @@ frontend/src/
   components/
     Auth.jsx           email + password sign in / sign up
     PreferenceForm.jsx the search form
-    RoomCard.jsx       the fit receipt — gauge, gallery, factor bars, heart
-    RoomForm.jsx       add / edit a listing, photo upload
-    MyListings.jsx     your own rooms: edit + inline-confirm delete
+    RoomCard.jsx       the fit receipt — gauge, gallery, factor bars, heart,
+                       Description toggle (display-only, never scored)
+    RoomForm.jsx       add / edit / claim a listing, photo upload, admin fields
+    MyListings.jsx     your own rooms: edit, pause, delete; claim screen;
+                       admin claim links + share sheet
     SavedRooms.jsx     saved rooms, re-ranked against your last search
     Messages.jsx       inbox + thread, owns its own back-and-forth
     Avatar.jsx         photo or coloured initials; palette lives here
@@ -119,6 +130,11 @@ supabase/              run in numerical order
   06_profiles.sql      profiles (names, avatar) + RLS
   07_avatars.sql       avatar_color + avatars bucket + storage policies
   08_messages.sql      messages table + RLS (immutable by design)
+  09_hidden_threads.sql  remove a conversation from your own inbox
+  10_roles.sql         profiles.role + trigger so nobody promotes themselves
+  11_claims.sql        rooms.active, room_sources, claim_links + claim functions
+  12_descriptions.sql  rooms.description (optional, 2,000 chars), carried by claims
+  undo/                one undo script per migration from 10 on
 render.yaml            backend deploy blueprint
 ```
 
@@ -155,6 +171,11 @@ render.yaml            backend deploy blueprint
   immutable messages, unread in `localStorage`. Room cards show the owner's
   avatar + first name and a Message button; seed rooms read "Sample listing"
   and aren't messageable.
+- ✅ **Admin role + claimable listings** — admins add hidden listings copied
+  from other sites, keep the original post link, and send a one-time claim
+  link; the owner claims, edits and publishes. Owners can pause listings;
+  admins can include inactive rooms in search. Database live; app on the
+  `Vincent_Changes` branch pending review.
 - ⬜ **Public shareable listings** — specced, not started (the last planned item)
 
 ## Working style

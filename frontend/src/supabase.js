@@ -7,20 +7,25 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(url, anonKey);
 
-export async function fetchRooms() {
-  const { data, error } = await supabase
-    .from("rooms")
-    .select(
-      "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos"
-    );
+const ROOM_FIELDS =
+  "id, title, rent, location, description, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos, active";
+
+// Rooms for the Find tab. RLS decides what you MAY read (active rooms, your own,
+// and everything for admins); this decides what the search SHOWS: active rooms
+// only, unless an admin ticked "Include inactive rooms". Without the filter,
+// your own paused listing would turn up in your own search results.
+export async function fetchRooms({ includeInactive = false } = {}) {
+  let query = supabase.from("rooms").select(ROOM_FIELDS);
+  if (!includeInactive) query = query.eq("active", true);
+  const { data, error } = await query;
 
   if (error) throw new Error(`Couldn't load rooms: ${error.message}`);
   return data ?? [];
 }
 
 // Distinct neighborhoods, for the preference dropdown. Postgres has no cheap
-// DISTINCT through the JS client, so we dedupe the location column here. RLS
-// lets signed-in users read every room, so this covers seed + user listings.
+// DISTINCT through the JS client, so we dedupe the location column here. Active
+// rooms only, so an unpublished listing's area never shows up in the list.
 const LOCATIONS_CACHE = "roomfit:locations";
 
 export async function fetchLocations() {
@@ -32,7 +37,10 @@ export async function fetchLocations() {
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt) await new Promise((r) => setTimeout(r, 600));
 
-    const { data, error } = await supabase.from("rooms").select("location");
+    const { data, error } = await supabase
+      .from("rooms")
+      .select("location")
+      .eq("active", true);
     if (error) {
       lastError = error;
       continue;
@@ -71,9 +79,6 @@ export function cachedLocations() {
 // where owner_id = auth.uid(). The frontend still sets owner_id explicitly so
 // the insert passes the policy's WITH CHECK.
 
-const ROOM_FIELDS =
-  "id, title, rent, location, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos";
-
 async function currentUserId() {
   const {
     data: { user },
@@ -83,22 +88,37 @@ async function currentUserId() {
 }
 
 // Only the columns a user may write. Strips id (generated always — can't be
-// updated), owner_id, and created_at so they can't be tampered with.
+// updated), owner_id, and created_at so they can't be tampered with. `active`
+// is writable, but a trigger forces it to true when a non-admin adds a room.
 const WRITABLE = [
   "title",
   "rent",
   "location",
+  "description",
   "cleanliness",
   "social_level",
   "sleep_schedule",
   "pets_allowed",
   "smoking_allowed",
   "photos",
+  "active",
 ];
+
+export const DESCRIPTION_MAX = 2000; // matches the check in 12_descriptions.sql
+
+// Posts copied from another site often end with that site's "See less" button
+// text. Drop it, and store a blank description as null so the card shows no
+// Description button for it.
+function cleanDescription(text) {
+  if (text == null) return null;
+  const cleaned = String(text).replace(/\s*see less\s*$/i, "").trim();
+  return cleaned || null;
+}
 
 function writable(room) {
   const out = {};
   for (const k of WRITABLE) if (k in room) out[k] = room[k];
+  if ("description" in out) out.description = cleanDescription(out.description);
   // Keep the legacy single-cover column in sync with photos[0]. Derived in one
   // place so the two can't drift, and it keeps photo_url a valid fallback until
   // it's dropped in a later migration.
@@ -145,9 +165,123 @@ export async function deleteRoom(id) {
   if (error) throw new Error(`Couldn't delete the room: ${error.message}`);
 }
 
+// Pause / show again. RLS limits this to your own rooms.
+export async function setRoomActive(id, active) {
+  const { error } = await supabase.from("rooms").update({ active }).eq("id", id);
+  if (error) throw new Error(`Couldn't update the listing: ${error.message}`);
+}
+
+// --- claimable listings (admin) ---------------------------------------------
+// An admin copies a room from another site as an inactive listing, keeps the
+// original post link, and sends the owner a one-time claim link. room_sources
+// and claim_links are admin-only under RLS; claimers only ever go through the
+// get_claim / claim_room functions. See supabase/11_claims.sql.
+
+// Original post links for these rooms, as Map<roomId, url>.
+export async function fetchRoomSources(roomIds) {
+  if (roomIds.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from("room_sources")
+    .select("room_id, source_url")
+    .in("room_id", roomIds);
+  if (error) throw new Error(`Couldn't load original post links: ${error.message}`);
+  return new Map((data ?? []).map((s) => [String(s.room_id), s.source_url]));
+}
+
+// Blank clears it. Separate from the room save, so a failure here says so
+// rather than failing the whole listing.
+export async function saveRoomSource(roomId, url) {
+  const trimmed = (url ?? "").trim();
+  const { error } = trimmed
+    ? await supabase
+        .from("room_sources")
+        .upsert(
+          { room_id: roomId, source_url: trimmed, updated_at: new Date().toISOString() },
+          { onConflict: "room_id" }
+        )
+    : await supabase.from("room_sources").delete().eq("room_id", roomId);
+  if (error) throw new Error(`The room saved, but not its original post link: ${error.message}`);
+}
+
+// The one still-working claim link per room, as Map<roomId, { token, expires_at }>.
+export async function fetchLiveClaimLinks(roomIds) {
+  if (roomIds.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from("claim_links")
+    .select("room_id, token, expires_at")
+    .in("room_id", roomIds)
+    .is("used_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`Couldn't load claim links: ${error.message}`);
+  const out = new Map();
+  for (const l of data ?? []) {
+    const key = String(l.room_id);
+    if (!out.has(key)) out.set(key, l); // newest first, so the first one wins
+  }
+  return out;
+}
+
+// Makes a new link, expiring any old one for the same room.
+export async function createClaimLink(roomId) {
+  const { data, error } = await supabase.rpc("create_claim_link", { p_room_id: roomId });
+  if (error) throw new Error(`Couldn't create the link: ${error.message}`);
+  return data;
+}
+
+export const CLAIM_PARAM = "claim";
+
+export function claimUrl(token) {
+  return `${window.location.origin}/?${CLAIM_PARAM}=${token}`;
+}
+
+// { status: "ok", room } or { status: "used" | "expired" | "invalid" | "own" |
+// "claimed_by_you" }. Never includes the original post link.
+export async function getClaim(token) {
+  const { data, error } = await supabase.rpc("get_claim", { p_token: token });
+  if (error) throw new Error(`Couldn't open this link: ${error.message}`);
+  return data;
+}
+
+// Photos the admin uploaded live in the admin's folder. Copy them into the
+// claimer's own folder so the claimer really owns them. The copy happens on
+// Supabase's servers — nothing is downloaded — and needs no new storage rule:
+// room photos are publicly readable, and you may always write your own folder.
+// Photos the claimer uploaded themselves are already in their folder.
+async function copyPhotosToMyFolder(photos) {
+  const uid = await currentUserId();
+  const marker = `/${PHOTO_BUCKET}/`;
+  const out = [];
+  for (const url of photos ?? []) {
+    const path = url.split(marker)[1];
+    if (!path || path.startsWith(`${uid}/`)) {
+      out.push(url); // not in our bucket (e.g. set from the dashboard), or already theirs
+      continue;
+    }
+    const dest = `${uid}/${crypto.randomUUID()}.jpg`;
+    const { error } = await supabase.storage.from(PHOTO_BUCKET).copy(path, dest);
+    if (error) throw new Error(`Couldn't copy the photos: ${error.message}`);
+    out.push(supabase.storage.from(PHOTO_BUCKET).getPublicUrl(dest).data.publicUrl);
+  }
+  return out;
+}
+
+// Accept: copy photos first, then claim in one step on the server. If the copy
+// fails nothing is claimed, and Accept can simply be tapped again.
+export async function acceptClaim(token, room) {
+  const photos = await copyPhotosToMyFolder(room.photos);
+  const payload = { ...writable(room), photos };
+  const { data, error } = await supabase.rpc("claim_room", {
+    p_token: token,
+    p_room: payload,
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // --- profiles ---------------------------------------------------------------
 
-const PROFILE_FIELDS = "id, first_name, last_name, avatar_url, avatar_color";
+const PROFILE_FIELDS = "id, first_name, last_name, avatar_url, avatar_color, role";
 
 export function displayName(profile) {
   if (!profile) return null;
@@ -327,8 +461,10 @@ export async function fetchFavouriteRooms() {
     .eq("user_id", uid)
     .order("created_at", { ascending: false });
   if (error) throw new Error(`Couldn't load your saved rooms: ${error.message}`);
-  // Embedded row is null if the room was deleted mid-flight; drop those.
-  return (data ?? []).map((r) => r.rooms).filter(Boolean);
+  // Embedded row is null if the room was deleted mid-flight, or if it's been
+  // paused (RLS hides it). Admins can still read paused rooms, so drop those
+  // explicitly too — Saved should match what the Find tab would show.
+  return (data ?? []).map((r) => r.rooms).filter((r) => r && r.active !== false);
 }
 
 // --- photos (Phase 1) -------------------------------------------------------
