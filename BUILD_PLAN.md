@@ -148,10 +148,48 @@ pure scoring service with no credentials to leak and nothing to migrate.
       discovered only by opening the receipt.
 - [x] Fixed a latent crash: a $0 budget divided by zero.
 
+## Admin role + claimable listings — shipped
+
+The supply problem: rooms are posted in places we can't and shouldn't scrape.
+So we ask the owner first, and the app carries the rest.
+
+- [x] `profiles.role` (`user` / `admin`), set by hand in the Supabase dashboard.
+      A trigger blocks the app from ever changing it: RLS is row-level, so the
+      existing "update your own profile" policy would otherwise let anyone write
+      their own role. `is_admin()` is `security definer` with an empty
+      `search_path`, and only ever answers about the caller.
+- [x] `rooms.active`. Inactive rooms are readable only by their owner and by
+      admins, so an unclaimed draft is never in anyone's search results. A
+      trigger forces `active = true` for non-admin inserts, making it a rule
+      rather than a UI detail.
+- [x] `room_sources` — where a listing was copied from. A separate table, not a
+      column on `rooms`: RLS can't hide a single column, so a `source_url` on
+      `rooms` would leak the original post to anyone who queried the API.
+- [x] `claim_links` — one-time tokens (random v4 uuid, 14 days). Nobody can
+      write the table directly; links are created and spent only through
+      `create_claim_link` / `get_claim` / `claim_room`. The link row is locked
+      `for update` during a claim, so two people opening the same link can't
+      both take the room.
+- [x] Claim flow: the owner opens the link, signs up or in, edits a prefilled
+      form, and on Accept becomes the owner in one transaction. Photos the
+      admin uploaded are copied into the claimer's own storage folder first, so
+      they really own them.
+- [x] **The three lifestyle answers are required to publish.** They arrive
+      pre-filled from the admin's draft, so the claim screen shows them blank
+      and keeps Accept disabled until each is touched — otherwise the quickest
+      route through the screen publishes 3/3/flexible, indistinguishable from a
+      considered answer, and the claim would collect nothing the original post
+      didn't already say.
+- [x] Optional `description` (2,000 chars), display-only. `api.js` sends an
+      allowlist of scored fields, so it never reaches the ranking service.
+- [x] One undo script per migration in `supabase/undo/`, each noting what it
+      destroys — dropping `active` makes every hidden room public again.
+
 ## Backlog — ideas, not commitments
 
 - [ ] Public shareable listings (opt-in per room, owner profile + social links).
-      Specced in detail already.
+      Specced in detail already. Pairs with the claim flow: a lister who has
+      just published wants a link to post back where they were found.
 - [ ] Live message delivery via Supabase Realtime, and cross-device unread
       using the `read_at` column that's already reserved.
 

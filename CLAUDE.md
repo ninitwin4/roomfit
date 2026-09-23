@@ -64,6 +64,16 @@ Don't relitigate these without being asked:
   and on Accept becomes the owner and the listing goes live. Claiming happens
   only in the `claim_room` database function; photos are copied into the
   claimer's folder on Supabase's servers. Owners can pause their own listings.
+- **The claimer must answer the three lifestyle questions.** Cleanliness,
+  social level and sleep schedule are the whole reason the claim screen
+  exists — they're what a public post can never tell you. They arrive
+  pre-filled from the admin's draft, so claim mode shows them blank ("—", no
+  accent fill) and keeps "Accept and publish" disabled until each has been
+  touched. Any interaction counts, including tapping a slider where it already
+  sits. The columns are `NOT NULL`, so unanswered is only ever a state in
+  `RoomForm` — never a value in the database. Don't remove this: without it the
+  fastest path through the claim screen publishes the middle of every scale,
+  and nothing afterwards can tell that apart from a real answer.
 - **Hybrid listings.** 12 seed rooms (`owner_id` null) so the app is never
   empty, plus user-submitted rooms on top. Same schema for both.
 - **The fit receipt is the product.** Every result shows its per-factor
@@ -171,11 +181,13 @@ render.yaml            backend deploy blueprint
   immutable messages, unread in `localStorage`. Room cards show the owner's
   avatar + first name and a Message button; seed rooms read "Sample listing"
   and aren't messageable.
-- ✅ **Admin role + claimable listings** — admins add hidden listings copied
-  from other sites, keep the original post link, and send a one-time claim
-  link; the owner claims, edits and publishes. Owners can pause listings;
-  admins can include inactive rooms in search. Database live; app on the
-  `Vincent_Changes` branch pending review.
+- ✅ **Admin role + claimable listings** — LIVE. Admins add hidden listings
+  copied from other sites (with the owner's permission), keep the original post
+  link, and send a one-time claim link; the owner claims, edits and publishes.
+  Owners can pause listings; admins can include inactive rooms in search.
+  Migrations 10–12 are on the live database, and the app merged from
+  `Vincent_Changes`. The claim screen requires the three lifestyle answers
+  before it will publish.
 - ⬜ **Public shareable listings** — specced, not started (the last planned item)
 
 ## Working style
