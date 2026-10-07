@@ -11,6 +11,26 @@ function rampColor(ratio) {
   return "var(--fit-low)";
 }
 
+// "Posted today", "Posted 3 days ago", then "Posted Sep 14" once it's a week
+// old ("Sep 14, 2025" from another year). posted_at is the original post's date
+// for imported rooms and the date added for the rest; the database sets it
+// (supabase/24_posted_at.sql). Counted in calendar days where the viewer is.
+export function postedLabel(iso) {
+  if (!iso) return null;
+  const posted = new Date(iso);
+  const day = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((day(new Date()) - day(posted)) / 86400000);
+  if (days <= 0) return "Posted today";
+  if (days === 1) return "Posted yesterday";
+  if (days < 7) return `Posted ${days} days ago`;
+  const sameYear = posted.getFullYear() === new Date().getFullYear();
+  return `Posted ${posted.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  })}`;
+}
+
 // Circular fit gauge — the score "pops" as a ring. Bigger for the top match.
 function Gauge({ score, hero }) {
   const r = 44;
@@ -138,6 +158,7 @@ export default function RoomCard({
           <h3 className="room-title">{room.title}</h3>
           <p className="room-meta">
             ${room.rent}/mo · {room.location}
+            {room.posted_at && <> · {postedLabel(room.posted_at)}</>}
           </p>
           {/* These sort below every affordable room, but say so on the card —
               finding out only by opening the receipt is a nasty surprise. */}

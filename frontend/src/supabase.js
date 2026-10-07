@@ -8,7 +8,7 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = createClient(url, anonKey);
 
 const ROOM_FIELDS =
-  "id, title, rent, location, description, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos, active, source, claimed_at, expires_at";
+  "id, title, rent, location, description, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos, active, source, claimed_at, expires_at, posted_at";
 
 // A room copied from Craigslist whose host hasn't claimed it yet. Its owner_id
 // is the admin who imported it, so it takes "I'm interested" instead of a

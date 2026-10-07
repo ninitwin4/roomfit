@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchFavouriteRooms } from "../supabase.js";
 import { rankRooms } from "../api.js";
-import RoomCard from "./RoomCard.jsx";
+import RoomCard, { postedLabel } from "./RoomCard.jsx";
 
 export const PREFS_KEY = "roomfit:lastPrefs";
 
@@ -138,6 +138,7 @@ export default function SavedRooms({ savedIds, onToggleSave }) {
               <h3 className="room-title">{room.title}</h3>
               <p className="room-meta">
                 ${room.rent}/mo · {room.location}
+                {room.posted_at && <> · {postedLabel(room.posted_at)}</>}
               </p>
               <p className="listing-traits">{whyFiltered(room, state.prefs)}</p>
               <div className="listing-actions">

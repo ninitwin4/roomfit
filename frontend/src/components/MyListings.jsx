@@ -15,6 +15,7 @@ import {
   acceptClaim,
 } from "../supabase.js";
 import RoomForm from "./RoomForm.jsx";
+import { postedLabel } from "./RoomCard.jsx";
 
 const SLEEP_LABEL = { early: "Early risers", late: "Night owls", flexible: "Flexible" };
 
@@ -279,6 +280,7 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
               <h3 className="room-title">{room.title}</h3>
               <p className="room-meta">
                 ${room.rent}/mo · {room.location}
+                {room.posted_at && <> · {postedLabel(room.posted_at)}</>}
               </p>
               {room.active === false ? (
                 <p className="status-tag">
