@@ -3,7 +3,9 @@
 ## Your job
 
 For each Craigslist room waiting in RoomFit, find the poster's Craigslist reply
-address and save it. Saving it publishes the room. Do nothing else.
+address and save it. Do nothing else. (Rooms are live from the moment they're
+imported; saving the address lets RoomFit email the host, and if someone is
+already interested, that email goes out straight away.)
 
 ## Where
 
@@ -34,7 +36,7 @@ Each row has:
 | `external_id` | the Craigslist post key: the last part of `source_url` |
 | `attempts` | how many earlier runs failed on this room |
 
-The list contains only rooms that are from Craigslist, not live yet, without an
+The list contains only rooms that are from Craigslist, not claimed yet, without an
 email, and with fewer than 3 failed attempts. Newest posts come first. **If it
 returns no rows, stop: there's nothing to do.**
 
@@ -62,8 +64,8 @@ returns no rows, stop: there's nothing to do.**
      ```sql
      select public.report_email(<room_id>, 'found', '<address>');
      ```
-     This saves the address and makes the room live in one step. It returns
-     `live`.
+     This saves the address, and emails the host if someone is already
+     interested. It returns `live`.
    - **The post has no email reply option** (phone only, or replies turned off):
      ```sql
      select public.report_email(<room_id>, 'no_email');
@@ -119,8 +121,8 @@ your report where you stopped and why.
 
 ## What happens to each result
 
-- **`found`:** saves the address and makes the room live, but only if the room
-  is still from Craigslist, not live, and without an email.
+- **`found`:** saves the address (and emails the host if someone is waiting), but only if the room
+  is still from Craigslist, not claimed, and without an email.
 - **`gone`, `mismatch`, `no_email`:** take the room out of the queue for good.
   The next morning's import deletes it and its photos.
 - **`error`:** adds 1 to `attempts`. After 3 errors the room leaves the queue,

@@ -76,11 +76,14 @@ Don't relitigate these without being asked:
   and nothing afterwards can tell that apart from a real answer.
 - **Craigslist rooms take "I'm interested", not messages, until claimed.** A
   script on Vincent's Mac (`scripts/craigslist-import/`, daily 9:00 PT, Apify
-  `memo23/craigslist-scraper`) imports SF rooms with photos as inactive rooms
-  owned by an import admin (`rooms.source = 'craigslist'`). An outside email
-  bot saves each post's reply address through `report_email()`, which makes the
-  room live. The first "I'm interested" emails the host once, with a claim
-  link; on claim (`rooms.claimed_at`), each interested person's note becomes
+  `memo23/craigslist-scraper`) imports SF rooms with photos as **live** rooms
+  owned by an import admin (`rooms.source = 'craigslist'`). The host is emailed
+  once, with a claim link, when someone is interested and the post's reply
+  address is known (`queue_host_email()`): on the first "I'm interested" if the
+  address is already saved, or when `report_email()` saves it later. Every
+  interest alert to the team carries the room's claim link, so the team can
+  send it by hand when there's no address; the host email reuses that link. On
+  claim (`rooms.claimed_at`), each interested person's note becomes
   their own one-to-one thread and they get an email. Emails are rows in
   `email_outbox`, posted by `pg_net` to the Cloud Run mailer (Gmail as
   joinroomfitapp@gmail.com; key in Vault); every interest and every claim also
@@ -216,10 +219,13 @@ supabase/              run in numerical order
   16_email_sending.sql pg_net sends the outbox to the mailer, pg_cron syncs
                        results and retries, team alerts on interest and claim
   17_listing_expiry.sql  rooms.expires_at, 30-day listings, daily pause + email
+  18_import_cleanup_fixes.sql  rejected_imports; cleanup spares rooms awaiting a claim
+  19_imports_go_live.sql       imports go live at once; host email via queue_host_email()
+  20_team_alert_claim_link.sql claim link in team alerts; host email reuses it
   18_import_cleanup_fixes.sql  rejected_imports; cleanup waits for open claim links
   undo/                one undo script per migration from 10 on
 scripts/craigslist-import/
-  import.mjs           daily scrape → inactive rooms (no dependencies)
+  import.mjs           daily scrape → live rooms (no dependencies)
   EMAIL_BOT.md         instructions the email bot follows
   README.md            setup, launchd schedule, sending the emails
 render.yaml            backend deploy blueprint
@@ -277,14 +283,12 @@ landing/               landing page (separate Next.js project + its design hando
 - ✅ **Landing page** — LIVE on joinroomfit.com (www redirects to it), its own
   Vercel project (`roomfit-landing`) deploying `landing/` from `main`. Waitlist
   sign-ups land in the `waitlist` table, verified with a real sign-up.
-- 🟡 **Craigslist import + "I'm interested"** — built on branch
-  `craigslist-import` (Vincent's fork). Migrations 15 and 16 are on the live
-  database, each after a rolled-back dry run (one and many interested people,
-  claims, RLS, sending, retries). Email sending is live and tested. First
-  import done Oct 6: 99 rooms, all hidden, owned by the import admin. **Don't
-  turn on the email bot (or the daily import) until this branch is live on
-  app.joinroomfit.com** — the old app would show those rooms with a Message
-  button to the import admin instead of "I'm interested".
+- ✅ **Craigslist import + "I'm interested"** — LIVE (PRs #4, #5). Migrations
+  15–20 are on the live database. 99 imported rooms are live (Oct 6); 28 have
+  a reply address. Team alerts go to the team inbox (`team_recipients`). The email bot is
+  stopped; the daily import isn't scheduled yet. Open from Nini's review: the
+  bot's database access, double sends on a slow mailer, note spam, the
+  CAN-SPAM footer and opt-out, and Craigslist's terms.
 - ⬜ **Public shareable listings** — specced, not started (the last planned item)
 
 ## Working style

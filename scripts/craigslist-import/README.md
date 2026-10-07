@@ -9,7 +9,7 @@ Brings San Francisco rooms from Craigslist into RoomFit, so people can say
 
 | When | What | Where |
 |---|---|---|
-| 9:00 PT daily | `import.mjs` scrapes new posts and adds them as **inactive** rooms | this Mac (launchd) |
+| 9:00 PT daily | `import.mjs` scrapes new posts and adds them as **live** rooms | this Mac (launchd) |
 | 10:00 PT daily | the email bot finds each post's reply address; saving it makes the room **live** | the bot ([EMAIL_BOT.md](EMAIL_BOT.md)) |
 | First "I'm interested" on a room | one email to the host with a 14-day claim link | database → `email_outbox` → mailer → Gmail |
 | Every "I'm interested" | a team alert to everyone in `team_recipients` | same |
@@ -57,8 +57,8 @@ times), with their photos.
    ```
    Add `--dataset=<id>` to reuse an earlier Apify run instead of paying for a
    new scrape.
-5. **Run it for real once** and check the rooms in the app (admin → Include
-   inactive rooms):
+5. **Run it for real once** and check the rooms in the app (they're live
+   straight away):
    ```bash
    node import.mjs
    ```
