@@ -138,6 +138,9 @@ Only touch these if everything above is done and there's time left:
   (Site URL + a `https://<domain>/**` Redirect URL), and Vercel's domain list. The
   frontend builds claim links and reset redirects from `window.location.origin`,
   so nothing in `src/` names a domain — keep it that way.
+- **Database before app.** Run a PR's migrations on the live database before
+  merging any app change that reads them; the app deploys on merge and fails if
+  a column is missing (PR #5, Oct 6).
 
 ## Landing page
 
