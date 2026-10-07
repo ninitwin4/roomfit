@@ -95,8 +95,13 @@ Don't relitigate these without being asked:
   (17:00 UTC) pauses expired listings and emails the owner; "Show again" on an
   expired listing renews it for 30 days. Sample rooms and unclaimed Craigslist
   imports have no expiry. Nothing is ever deleted for expiring.
-- **Hybrid listings.** 12 seed rooms (`owner_id` null) so the app is never
-  empty, plus user-submitted rooms on top. Same schema for both.
+- **Real listings only.** The 12 sample rooms from `02_seed_rooms.sql`
+  (`owner_id` null) kept the app from looking empty early on; they were removed
+  on Oct 7, 2026 (`23_remove_sample_listings.sql`), when Craigslist imports and
+  team-added rooms filled it. Every room now has an owner. `seed_rooms.json`
+  stays as `/rank`'s fallback for curl and local dev only. Keep `P1.jpg`,
+  `P3.jpg` and `P7.jpg` in the `room-photos` bucket: the landing page's demo
+  shows them.
 - **The fit receipt is the product.** Every result shows its per-factor
   breakdown with a plain-language reason. Don't reduce it to a single number.
 - **Type: one serif moment, sans everywhere else.** EB Garamond 600 sets the
@@ -224,6 +229,7 @@ supabase/              run in numerical order
   20_team_alert_claim_link.sql claim link in team alerts; host email reuses it
   21_keep_ranking_awake.sql    pg_cron pings Render's /health every 10 min
   22_team_message_alert.sql    email the team inbox on new messages to the team account
+  23_remove_sample_listings.sql  remove the 12 ownerless sample rooms (ids 1–12)
   undo/                one undo script per migration from 10 on
 scripts/craigslist-import/
   import.mjs           daily scrape → live rooms (no dependencies)
