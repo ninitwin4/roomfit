@@ -223,6 +223,7 @@ supabase/              run in numerical order
   19_imports_go_live.sql       imports go live at once; host email via queue_host_email()
   20_team_alert_claim_link.sql claim link in team alerts; host email reuses it
   21_keep_ranking_awake.sql    pg_cron pings Render's /health every 10 min
+  22_team_message_alert.sql    email the team inbox on new messages to the team account
   undo/                one undo script per migration from 10 on
 scripts/craigslist-import/
   import.mjs           daily scrape → live rooms (no dependencies)
