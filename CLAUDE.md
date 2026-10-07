@@ -222,7 +222,6 @@ supabase/              run in numerical order
   18_import_cleanup_fixes.sql  rejected_imports; cleanup spares rooms awaiting a claim
   19_imports_go_live.sql       imports go live at once; host email via queue_host_email()
   20_team_alert_claim_link.sql claim link in team alerts; host email reuses it
-  18_import_cleanup_fixes.sql  rejected_imports; cleanup waits for open claim links
   undo/                one undo script per migration from 10 on
 scripts/craigslist-import/
   import.mjs           daily scrape → live rooms (no dependencies)
