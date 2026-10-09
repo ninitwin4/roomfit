@@ -21,6 +21,14 @@ const MAX_PHOTOS = 5;
 // Blank is fine (it's optional); anything else must be a web address.
 const isValidLink = (s) => !s.trim() || /^https?:\/\/\S+$/i.test(s.trim());
 
+// A date as a date field's "YYYY-MM-DD", in your own time zone ("" for none).
+export function dateInput(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 // The three things a public post can never tell us, and the whole reason the
 // claim screen exists. They arrive pre-filled from the admin's draft, and the
 // columns are NOT NULL, so "unanswered" can only ever be a state in this form —
@@ -51,11 +59,13 @@ export default function RoomForm({
     ...BLANK,
     active: !isAdmin,
     source_url: "",
+    posted_date: "",
     ...(initial ?? {}),
   }));
   const [areas, setAreas] = useState([]);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState(null);
+  const [dragging, setDragging] = useState(false);
   // Which lifestyle questions the claimer has actually answered. Only ever
   // consulted in claim mode — adding and editing are unchanged.
   const [answered, setAnswered] = useState(() => new Set());
@@ -98,6 +108,25 @@ export default function RoomForm({
   async function handlePhotos(e) {
     const files = Array.from(e.target.files || []);
     e.target.value = ""; // allow re-picking the same file after a remove
+    await addPhotos(files);
+  }
+
+  // Photos dragged onto the photo area, e.g. saved from a post, go through the
+  // same upload as picked ones. Anything that isn't an image is skipped.
+  async function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    if (photoBusy) return;
+    const files = Array.from(e.dataTransfer?.files || []);
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    if (files.length && !images.length) {
+      setPhotoError("Only photos can be added here.");
+      return;
+    }
+    await addPhotos(images);
+  }
+
+  async function addPhotos(files) {
     if (!files.length) return;
 
     const slots = MAX_PHOTOS - photos.length;
@@ -159,10 +188,23 @@ export default function RoomForm({
         />
       </div>
 
-      <div className="field">
+      <div
+        className={dragging ? "field photo-drop dragging" : "field photo-drop"}
+        onDragOver={(e) => {
+          if (photos.length >= MAX_PHOTOS) return;
+          e.preventDefault(); // without this the browser opens the file instead
+          setDragging(true);
+        }}
+        onDragLeave={(e) => {
+          // Moving over a child (a thumbnail) fires dragleave too; only reset
+          // when the pointer really leaves the area.
+          if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false);
+        }}
+        onDrop={handleDrop}
+      >
         <span className="field-label">Photos</span>
         <span className="hint">
-          Up to {MAX_PHOTOS}. The first one is the cover.
+          Up to {MAX_PHOTOS}. The first one is the cover. You can drag photos here.
         </span>
 
         {photos.length === 0 ? (
@@ -373,7 +415,26 @@ export default function RoomForm({
             )}
             <span className="admin-hint">
               Admin feature. Only admins can see this — so you can always find
-              the original post and its owner.
+              the original post and its owner. A Facebook link marks the room
+              as from Facebook.
+            </span>
+          </div>
+
+          <div className="field admin-field">
+            <label htmlFor="room-posted">Date posted</label>
+            {/* max: a post can't be dated in the future */}
+            <input
+              id="room-posted"
+              type="date"
+              max={dateInput(new Date())}
+              value={room.posted_date ?? ""}
+              disabled={!(room.source_url ?? "").trim()}
+              onChange={(e) => set("posted_date", e.target.value)}
+            />
+            <span className="admin-hint">
+              {(room.source_url ?? "").trim()
+                ? "When the original post went up. The card shows it as “Posted …”."
+                : "Add the original post link first."}
             </span>
           </div>
         </div>

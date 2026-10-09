@@ -1032,6 +1032,19 @@ body {
   background: var(--accent);
 }
 
+/* the editor's photo area doubles as a drop target. The outline only appears
+   while photos are dragged over it, so the form looks the same otherwise. */
+.photo-drop {
+  border-radius: var(--radius-sm);
+  outline: 2px dashed transparent;
+  outline-offset: 6px;
+  transition: outline-color 120ms ease;
+}
+
+.photo-drop.dragging {
+  outline-color: var(--accent);
+}
+
 /* the editor's photo list */
 .photo-grid {
   list-style: none;
@@ -1154,6 +1167,7 @@ textarea {
 
 input[type="number"],
 input[type="text"],
+input[type="date"],
 select {
   width: 100%;
   padding: 12px;

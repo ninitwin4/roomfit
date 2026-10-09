@@ -90,6 +90,12 @@ Don't relitigate these without being asked:
   emails the team (`team_recipients`). The reply address lives in `room_sources`
   (admin-only), never on `rooms`. No reminders, and never anything that gets
   past Craigslist's CAPTCHA.
+- **Facebook listings.** The team copies rooms from public Facebook posts by
+  hand, signed in as the team account. A facebook.com / fb.com / fb.me post
+  link marks them `source = 'facebook'` (`sourceForLink()`); they're live, take
+  ordinary messages (the team inbox is emailed, `22_team_message_alert.sql`),
+  show "Room managed by RoomFit team", expire after 30 days, and carry the
+  post's date ("Date posted" → `room_sources.posted_at` → `rooms.posted_at`).
 - **Listings last 30 days.** `rooms.expires_at` is set by the database (30
   days from posting, and again from a claim), never by the app. A daily job
   (17:00 UTC) pauses expired listings and emails the owner; "Show again" on an

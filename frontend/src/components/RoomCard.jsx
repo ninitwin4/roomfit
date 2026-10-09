@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import Avatar from "./Avatar.jsx";
-import { awaitingHost } from "../supabase.js";
+import { awaitingHost, teamManaged } from "../supabase.js";
 
 // One ramp, used for both the total score and each factor bar, so the color
 // always means the same thing: how well this piece fits.
@@ -176,7 +176,9 @@ export default function RoomCard({
       {/* Seed rooms genuinely have no owner, so we say so rather than
           inventing a persona for them to be messaged. A room copied from
           Craigslist belongs to the admin who imported it until its host
-          claims it, so it shows neither that admin nor a Message button. */}
+          claims it, so it shows neither that admin nor a Message button. A
+          room the team copied from Facebook is run by the team account: same
+          label, but people message it, and the team answers. */}
       {awaitingHost(room) ? (
         <div className="owner-row">
           <span className="owner-pending">Room managed by RoomFit team</span>
@@ -192,6 +194,19 @@ export default function RoomCard({
                 I'm interested
               </button>
             )
+          )}
+        </div>
+      ) : teamManaged(room) ? (
+        <div className="owner-row">
+          <span className="owner-pending">Room managed by RoomFit team</span>
+          {onMessage && (
+            <button
+              type="button"
+              className="linkish owner-msg"
+              onClick={() => onMessage(room)}
+            >
+              Message
+            </button>
           )}
         </div>
       ) : room.owner_id ? (

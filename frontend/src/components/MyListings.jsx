@@ -8,13 +8,14 @@ import {
   setRoomActive,
   fetchRoomSources,
   saveRoomSource,
+  sourceForLink,
   fetchLiveClaimLinks,
   createClaimLink,
   claimUrl,
   getClaim,
   acceptClaim,
 } from "../supabase.js";
-import RoomForm from "./RoomForm.jsx";
+import RoomForm, { dateInput } from "./RoomForm.jsx";
 import { postedLabel } from "./RoomCard.jsx";
 
 const SLEEP_LABEL = { early: "Early risers", late: "Night owls", flexible: "Flexible" };
@@ -32,7 +33,6 @@ const CLAIM_PROBLEMS = {
 
 const shortDate = (iso) =>
   new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-
 // Listings last 30 days (supabase/17_listing_expiry.sql). A daily job pauses
 // the ones whose time is up, and "Show again" renews them for another 30.
 const isExpired = (room) =>
@@ -53,7 +53,7 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
   const [busyId, setBusyId] = useState(null); // room being paused or linked
 
   // admin extras
-  const [sources, setSources] = useState(() => new Map()); // roomId -> url
+  const [sources, setSources] = useState(() => new Map()); // roomId -> { url, postedAt }
   const [links, setLinks] = useState(() => new Map()); // roomId -> live link
   const [sharing, setSharing] = useState(null); // room whose share sheet is open
   const [shareError, setShareError] = useState(null);
@@ -89,6 +89,8 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
   async function handleSave(room) {
     setSaving(true);
     setSaveError(null);
+    // An admin's link says where the room came from: facebook.com → Facebook.
+    if (isAdmin) room = { ...room, source: sourceForLink(room.source, room.source_url) };
     let saved;
     try {
       saved =
@@ -102,7 +104,7 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
     // close the form anyway — saving again would add the room a second time.
     if (isAdmin) {
       try {
-        await saveRoomSource(saved.id, room.source_url);
+        await saveRoomSource(saved.id, room.source_url, room.posted_date);
       } catch (err) {
         setNotice({ tone: "error", text: err.message });
       }
@@ -209,7 +211,7 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
         <ShareSheet
           room={sharing}
           link={links.get(String(sharing.id))}
-          sourceUrl={sources.get(String(sharing.id))}
+          sourceUrl={sources.get(String(sharing.id))?.url}
           error={shareError}
           onReplace={() => replaceLink(sharing)}
           onClose={() => setSharing(null)}
@@ -331,7 +333,8 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
                     onClick={() =>
                       setEditing({
                         ...room,
-                        source_url: sources.get(String(room.id)) ?? "",
+                        source_url: sources.get(String(room.id))?.url ?? "",
+                        posted_date: dateInput(sources.get(String(room.id))?.postedAt),
                       })
                     }
                   >

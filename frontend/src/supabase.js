@@ -17,6 +17,22 @@ export function awaitingHost(room) {
   return room?.source === "craigslist" && !room?.claimed_at;
 }
 
+// A room the team copied from a Facebook post and still runs itself. It takes
+// ordinary messages (the team answers them; 22_team_message_alert.sql emails
+// the team inbox), but the card says who's behind it, as for Craigslist rooms.
+export function teamManaged(room) {
+  return room?.source === "facebook" && !room?.claimed_at;
+}
+
+// Where an admin's listing came from, read off its original post link. A
+// Craigslist import stays one; otherwise a facebook.com / fb.com link makes it
+// a Facebook room, and anything else an ordinary one.
+const FACEBOOK_LINK = /^https?:\/\/([a-z0-9-]+\.)*(facebook\.com|fb\.com|fb\.me)(\/|$)/i;
+export function sourceForLink(currentSource, url) {
+  if (currentSource === "craigslist") return "craigslist";
+  return FACEBOOK_LINK.test((url ?? "").trim()) ? "facebook" : "roomfit";
+}
+
 // Rooms for the Find tab. RLS decides what you MAY read (active rooms, your own,
 // and everything for admins); this decides what the search SHOWS: active rooms
 // only, unless an admin ticked "Include inactive rooms". Without the filter,
@@ -109,6 +125,9 @@ const WRITABLE = [
   "smoking_allowed",
   "photos",
   "active",
+  // Only an admin's change sticks: for everyone else the database keeps the
+  // room's source as it was (protect_room_origin, 15_craigslist.sql).
+  "source",
 ];
 
 export const DESCRIPTION_MAX = 2000; // matches the check in 12_descriptions.sql
@@ -184,28 +203,38 @@ export async function setRoomActive(id, active) {
 // and claim_links are admin-only under RLS; claimers only ever go through the
 // get_claim / claim_room functions. See supabase/11_claims.sql.
 
-// Original post links for these rooms, as Map<roomId, url>.
+// Original post links for these rooms, with the date each post went up, as
+// Map<roomId, { url, postedAt }>.
 export async function fetchRoomSources(roomIds) {
   if (roomIds.length === 0) return new Map();
   const { data, error } = await supabase
     .from("room_sources")
-    .select("room_id, source_url")
+    .select("room_id, source_url, posted_at")
     .in("room_id", roomIds);
   if (error) throw new Error(`Couldn't load original post links: ${error.message}`);
-  return new Map((data ?? []).map((s) => [String(s.room_id), s.source_url]));
+  return new Map(
+    (data ?? []).map((s) => [String(s.room_id), { url: s.source_url, postedAt: s.posted_at }])
+  );
 }
 
-// Blank clears it. Separate from the room save, so a failure here says so
+// A blank link clears both. postedDate is a "YYYY-MM-DD" from a date field,
+// stored as noon that day where you are, so it can't slip to the day before
+// once it's in UTC. The database copies it onto the room's "Posted …" date
+// (24_posted_at.sql). Separate from the room save, so a failure here says so
 // rather than failing the whole listing.
-export async function saveRoomSource(roomId, url) {
+export async function saveRoomSource(roomId, url, postedDate) {
   const trimmed = (url ?? "").trim();
+  const postedAt = postedDate ? new Date(`${postedDate}T12:00`).toISOString() : null;
   const { error } = trimmed
-    ? await supabase
-        .from("room_sources")
-        .upsert(
-          { room_id: roomId, source_url: trimmed, updated_at: new Date().toISOString() },
-          { onConflict: "room_id" }
-        )
+    ? await supabase.from("room_sources").upsert(
+        {
+          room_id: roomId,
+          source_url: trimmed,
+          posted_at: postedAt,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "room_id" }
+      )
     : await supabase.from("room_sources").delete().eq("room_id", roomId);
   if (error) throw new Error(`The room saved, but not its original post link: ${error.message}`);
 }
