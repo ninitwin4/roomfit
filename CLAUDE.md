@@ -315,6 +315,11 @@ landing/               landing page (separate Next.js project + its design hando
   stopped; the daily import isn't scheduled yet. Open from Nini's review: the
   bot's database access, double sends on a slow mailer, note spam, the
   CAN-SPAM footer and opt-out, and Craigslist's terms.
+- ✅ **Facebook import** — LIVE (Oct 8). Signed in as the team account, paste
+  a Facebook post: its first sentence becomes the title and the rest the
+  description, Claude Haiku 5.5 (`parse-post`) fills in rent, neighbourhood,
+  pets and smoking where the post states them, it's dated today, and photos
+  paste in with Copy Image. Monthly spend limit set in the Anthropic Console.
 - ⬜ **Public shareable listings** — specced, not started (the last planned item)
 
 ## Working style
