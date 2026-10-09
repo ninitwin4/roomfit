@@ -197,6 +197,42 @@ export async function setRoomActive(id, active) {
   if (error) throw new Error(`Couldn't update the listing: ${error.message}`);
 }
 
+// --- Facebook import (team account) -------------------------------------------
+// The team account is the one whose login email is on the team list
+// (team_recipients). Only admins can read that list, so for everyone else this
+// is simply false. The parse-post function checks the same thing for itself;
+// this only decides whether to show the button.
+export async function fetchIsTeamAccount() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const email = user?.email?.toLowerCase();
+  if (!email) return false;
+  const { data, error } = await supabase.from("team_recipients").select("email");
+  if (error) return false;
+  return (data ?? []).some((r) => r.email?.toLowerCase() === email);
+}
+
+// Reads a pasted Facebook post with Claude (supabase/functions/parse-post).
+// Returns { title, rent, neighborhood, pets_allowed, smoking_allowed }, each
+// { value, quote }: null when the post doesn't say. Nothing is saved.
+export async function parsePost(text, areas) {
+  const { data, error } = await supabase.functions.invoke("parse-post", {
+    body: { text, areas },
+  });
+  if (error) {
+    let message = "Couldn't read the post just now. Try again, or fill the form in by hand.";
+    try {
+      const body = await error.context?.json();
+      if (body?.error) message = body.error;
+    } catch {
+      /* not JSON: keep the general message */
+    }
+    throw new Error(message);
+  }
+  return data.fields;
+}
+
 // --- claimable listings (admin) ---------------------------------------------
 // An admin copies a room from another site as an inactive listing, keeps the
 // original post link, and sends the owner a one-time claim link. room_sources

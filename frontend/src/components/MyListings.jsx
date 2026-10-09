@@ -9,6 +9,9 @@ import {
   fetchRoomSources,
   saveRoomSource,
   sourceForLink,
+  fetchIsTeamAccount,
+  fetchLocations,
+  parsePost,
   fetchLiveClaimLinks,
   createClaimLink,
   claimUrl,
@@ -47,6 +50,10 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
   const [notice, setNotice] = useState(null); // { tone: "ok" | "error", text }
 
   const [editing, setEditing] = useState(null); // null | "new" | room
+  // The team account can fill a new listing from a pasted Facebook post.
+  const [isTeam, setIsTeam] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [draft, setDraft] = useState(null); // { room, fromPost } after a parse
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
@@ -73,6 +80,9 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
         ]);
         setSources(s);
         setLinks(l);
+        fetchIsTeamAccount()
+          .then(setIsTeam)
+          .catch(() => setIsTeam(false));
       }
     } catch (err) {
       setLoadError(err.message);
@@ -111,6 +121,7 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
     }
     setSaving(false);
     setEditing(null);
+    setDraft(null);
     await load();
   }
 
@@ -189,14 +200,30 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
     return <ClaimListing token={claimToken} onDone={finishClaim} />;
   }
 
+  if (importing) {
+    return (
+      <ImportPost
+        onParsed={(fields) => {
+          setDraft(draftFromPost(fields));
+          setImporting(false);
+          setEditing("new");
+        }}
+        onCancel={() => setImporting(false)}
+      />
+    );
+  }
+
   if (editing !== null) {
     return (
       <RoomForm
-        initial={editing === "new" ? null : editing}
+        initial={editing === "new" ? draft?.room ?? null : editing}
+        mode={editing === "new" ? "add" : "edit"}
+        fromPost={editing === "new" ? draft?.fromPost : undefined}
         isAdmin={isAdmin}
         onSave={handleSave}
         onCancel={() => {
           setEditing(null);
+          setDraft(null);
           setSaveError(null);
         }}
         saving={saving}
@@ -220,13 +247,20 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
 
       <div className="results-head">
         <h2 className="results-count">Your listings</h2>
-        <button
-          type="button"
-          className="linkish"
-          onClick={() => setEditing("new")}
-        >
-          Add a room
-        </button>
+        <div className="results-actions">
+          {isTeam && (
+            <button type="button" className="linkish" onClick={() => setImporting(true)}>
+              Import from post
+            </button>
+          )}
+          <button
+            type="button"
+            className="linkish"
+            onClick={() => setEditing("new")}
+          >
+            Add a room
+          </button>
+        </div>
       </div>
 
       {notice && (
@@ -392,6 +426,87 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
 }
 
 // The claim screen: the normal room form, prefilled, with "Accept and publish".
+// A parsed post as a new listing, plus the words each field came from. Only
+// what the post said is filled in; tidiness, social level and hours keep the
+// form's defaults until the host claims the room. The team runs these rooms
+// itself, so they go live on save (untick Active to keep one hidden).
+function draftFromPost(fields) {
+  const value = (k, fallback) => fields?.[k]?.value ?? fallback;
+  return {
+    room: {
+      title: value("title", ""),
+      rent: value("rent", 0),
+      location: value("neighborhood", ""),
+      pets_allowed: value("pets_allowed", false),
+      smoking_allowed: value("smoking_allowed", false),
+      active: true,
+    },
+    fromPost: {
+      title: fields?.title?.quote ?? null,
+      rent: fields?.rent?.quote ?? null,
+      location: fields?.neighborhood?.quote ?? null,
+      pets_allowed: fields?.pets_allowed?.quote ?? null,
+      smoking_allowed: fields?.smoking_allowed?.quote ?? null,
+    },
+  };
+}
+
+// Team account only: paste a Facebook post, and Claude reads out what it says.
+function ImportPost({ onParsed, onCancel }) {
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function parse() {
+    setBusy(true);
+    setError(null);
+    try {
+      // The app's existing area names, so "SOMA" comes back as "SoMa".
+      const areas = await fetchLocations().catch(() => []);
+      const fields = await parsePost(text, areas);
+      onParsed(fields);
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="panel">
+      <h2 className="form-title">Import from post</h2>
+      <p className="hint">
+        Paste the text of a Facebook room post. Claude fills in only what it
+        says (title, rent, neighborhood, pets, smoking) and you check it all
+        before saving. The text is sent to Anthropic to be read.
+      </p>
+      <div className="field">
+        <label htmlFor="post-text">Post text</label>
+        <textarea
+          id="post-text"
+          rows={10}
+          maxLength={10000}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+      </div>
+      {error && <p className="auth-error">{error}</p>}
+      <div className="form-actions">
+        <button
+          type="button"
+          className="submit"
+          disabled={busy || !text.trim()}
+          onClick={parse}
+        >
+          {busy ? "Reading the post…" : "Parse"}
+        </button>
+        <button type="button" className="linkish" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ClaimListing({ token, onDone }) {
   const [state, setState] = useState({ status: "loading" });
   const [saving, setSaving] = useState(false);

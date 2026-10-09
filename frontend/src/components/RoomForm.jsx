@@ -43,9 +43,19 @@ const LIFESTYLE = ["cleanliness", "social_level", "sleep_schedule"];
 // Claim mode is the normal form, prefilled by an admin, with "Accept and
 // publish" in place of "Add room". Nothing is written until Accept — every edit
 // lives in this component's state, so Cancel leaves the listing untouched.
+// The words a field was read from, when the form was filled from a pasted post
+// (MyListings → Import from post). A field the post didn't mention says so,
+// so nothing looks checked that wasn't.
+function PostNote({ quote, missing = "Not in the post" }) {
+  if (!quote) return <span className="hint">{missing}</span>;
+  const shown = quote.length > 120 ? `${quote.slice(0, 117)}…` : quote;
+  return <span className="hint from-post">From the post: “{shown}”</span>;
+}
+
 export default function RoomForm({
   initial,
   mode = initial ? "edit" : "add",
+  fromPost, // { title, rent, location, pets_allowed, smoking_allowed } quotes, after an import
   isAdmin = false,
   onSave,
   onCancel,
@@ -97,6 +107,8 @@ export default function RoomForm({
     room.title.trim() &&
     room.location.trim() &&
     room.rent >= 0 &&
+    // an imported post with no rent leaves it empty, and it has to be filled
+    (!fromPost || room.rent > 0) &&
     linkOk &&
     lifestyleDone;
   const photos = room.photos ?? [];
@@ -177,8 +189,16 @@ export default function RoomForm({
         </p>
       )}
 
+      {fromPost && (
+        <p className="claim-banner">
+          From the post — check these. Only what the post said is filled in;
+          anything it didn't mention is left for you.
+        </p>
+      )}
+
       <div className="field">
         <label htmlFor="room-title">Title</label>
+        {fromPost && <PostNote quote={fromPost.title} />}
         <input
           id="room-title"
           type="text"
@@ -259,6 +279,7 @@ export default function RoomForm({
 
       <div className="field">
         <label htmlFor="room-rent">Monthly rent</label>
+        {fromPost && <PostNote quote={fromPost.rent} />}
         <div className="budget-input">
           <span className="budget-prefix" aria-hidden="true">
             $
@@ -267,7 +288,7 @@ export default function RoomForm({
             id="room-rent"
             type="text"
             inputMode="numeric"
-            value={room.rent}
+            value={fromPost && !room.rent ? "" : room.rent}
             onChange={(e) => {
               const digits = e.target.value.replace(/\D/g, "");
               set("rent", digits === "" ? 0 : parseInt(digits, 10));
@@ -279,6 +300,7 @@ export default function RoomForm({
       <div className="field">
         <label htmlFor="room-location">Location</label>
         <span className="hint">Pick an area or type a new one.</span>
+        {fromPost && <PostNote quote={fromPost.location} />}
         <input
           id="room-location"
           type="text"
@@ -310,6 +332,13 @@ export default function RoomForm({
           {(room.description ?? "").length} / {DESCRIPTION_MAX}
         </span>
       </div>
+
+      {fromPost && (
+        <p className="hint">
+          Tidiness, social level and hours aren't read from posts. They stay at
+          these defaults until the host claims the room and sets their own.
+        </p>
+      )}
 
       <div className="field">
         <span className="field-label" id="room-tidy-label">
@@ -373,6 +402,9 @@ export default function RoomForm({
           />
           Pets allowed
         </label>
+        {fromPost && (
+          <PostNote quote={fromPost.pets_allowed} missing="Not mentioned in the post" />
+        )}
         <label className="check">
           <input
             type="checkbox"
@@ -381,6 +413,9 @@ export default function RoomForm({
           />
           Smoking allowed
         </label>
+        {fromPost && (
+          <PostNote quote={fromPost.smoking_allowed} missing="Not mentioned in the post" />
+        )}
       </div>
 
       {/* Admin-only. Hiding these is presentation, not security: the database
@@ -396,7 +431,9 @@ export default function RoomForm({
             Active — shown in search
           </label>
           <span className="admin-hint">
-            Admin feature. Leave off until the owner claims the listing.
+            {fromPost
+              ? "Admin feature. Team-run rooms go live; untick to keep this one hidden."
+              : "Admin feature. Leave off until the owner claims the listing."}
           </span>
 
           <div className="field admin-field">

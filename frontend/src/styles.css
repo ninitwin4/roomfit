@@ -1422,6 +1422,19 @@ select {
   margin: 8px 0 14px;
 }
 
+/* more than one action beside a heading (e.g. Import from post · Add a room) */
+.results-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 16px;
+}
+
+/* where an imported field came from: the post's own words */
+.from-post {
+  color: var(--accent);
+}
+
 .results-count {
   font-family: var(--ui);
   font-weight: 700;

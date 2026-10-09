@@ -96,6 +96,14 @@ Don't relitigate these without being asked:
   ordinary messages (the team inbox is emailed, `22_team_message_alert.sql`),
   show "Room managed by RoomFit team", expire after 30 days, and carry the
   post's date ("Date posted" → `room_sources.posted_at` → `rooms.posted_at`).
+  The team account can also **Import from post**: `supabase/functions/parse-post`
+  sends the pasted text to Claude Haiku 5.5 (Anthropic's library, inside the
+  function only; key `ANTHROPIC_API_KEY` in Supabase secrets) and gets back
+  only title, rent, neighbourhood, pets and smoking, each with the words it
+  came from; a value whose words aren't in the post is dropped, and tidiness,
+  social and hours are never read from posts. Only callers whose login email is
+  on `team_recipients` get an answer, and nothing saves until the team checks
+  the form.
 - **Listings last 30 days.** `rooms.expires_at` is set by the database (30
   days from posting, and again from a claim), never by the app. A daily job
   (17:00 UTC) pauses expired listings and emails the owner; "Show again" on an
@@ -238,6 +246,8 @@ supabase/              run in numerical order
   23_remove_sample_listings.sql  remove the 12 ownerless sample rooms (ids 1–12)
   24_posted_at.sql             rooms.posted_at (post date or date added), set by the DB
   undo/                one undo script per migration from 10 on
+  functions/parse-post/index.ts  Edge Function: pasted post → fields
+                       (Claude Haiku 5.5), team account only
 scripts/craigslist-import/
   import.mjs           daily scrape → live rooms (no dependencies)
   EMAIL_BOT.md         instructions the email bot follows
