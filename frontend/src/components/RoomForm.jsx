@@ -55,7 +55,9 @@ function PostNote({ quote, missing = "Not in the post" }) {
 export default function RoomForm({
   initial,
   mode = initial ? "edit" : "add",
-  fromPost, // { title, rent, location, pets_allowed, smoking_allowed } quotes, after an import
+  // After an import: { rent, location, pets_allowed, smoking_allowed } quotes,
+  // and description: "rest" | "cut" | null
+  fromPost,
   isAdmin = false,
   onSave,
   onCancel,
@@ -135,8 +137,34 @@ export default function RoomForm({
       setPhotoError("Only photos can be added here.");
       return;
     }
+    // A photo dragged straight out of another web page often arrives as just
+    // its address, which this page isn't allowed to download.
+    if (!files.length && e.dataTransfer?.types?.includes("text/uri-list")) {
+      setPhotoError("That photo came as a link. Right-click it, choose Copy Image, then paste it here.");
+      return;
+    }
     await addPhotos(images);
   }
+
+  // Photos copied from a post (right-click → Copy Image) paste straight in
+  // with ⌘V / Ctrl+V, wherever the cursor is on the form. Text pastes as usual.
+  // Re-attached on every render, so it always counts the current photos.
+  useEffect(() => {
+    function onPaste(e) {
+      const images = Array.from(e.clipboardData?.files || []).filter((f) =>
+        f.type.startsWith("image/")
+      );
+      if (!images.length) return;
+      e.preventDefault();
+      if (photoBusy) {
+        setPhotoError("Wait for the last photo to finish, then paste again.");
+        return;
+      }
+      addPhotos(images);
+    }
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  });
 
   async function addPhotos(files) {
     if (!files.length) return;
@@ -198,7 +226,7 @@ export default function RoomForm({
 
       <div className="field">
         <label htmlFor="room-title">Title</label>
-        {fromPost && <PostNote quote={fromPost.title} />}
+        {fromPost && <span className="hint from-post">The post's first sentence</span>}
         <input
           id="room-title"
           type="text"
@@ -224,7 +252,8 @@ export default function RoomForm({
       >
         <span className="field-label">Photos</span>
         <span className="hint">
-          Up to {MAX_PHOTOS}. The first one is the cover. You can drag photos here.
+          Up to {MAX_PHOTOS}. The first one is the cover. Drag photos here, or
+          copy one (right-click → Copy Image) and paste it anywhere on this form.
         </span>
 
         {photos.length === 0 ? (
@@ -318,9 +347,20 @@ export default function RoomForm({
 
       <div className="field">
         <label htmlFor="room-description">Description (optional)</label>
-        <span className="hint">
-          What's the room like, who lives there, what's nearby.
-        </span>
+        {fromPost ? (
+          <span className="hint from-post">
+            {fromPost.description === "cut"
+              ? `The rest of the post, cut to ${DESCRIPTION_MAX.toLocaleString()} characters.`
+              : fromPost.description
+                ? "The rest of the post."
+                : "Nothing else in the post."}{" "}
+            Take out phone numbers, emails and names: seekers message the team here.
+          </span>
+        ) : (
+          <span className="hint">
+            What's the room like, who lives there, what's nearby.
+          </span>
+        )}
         <textarea
           id="room-description"
           rows={6}
@@ -469,9 +509,11 @@ export default function RoomForm({
               onChange={(e) => set("posted_date", e.target.value)}
             />
             <span className="admin-hint">
-              {(room.source_url ?? "").trim()
-                ? "When the original post went up. The card shows it as “Posted …”."
-                : "Add the original post link first."}
+              {!(room.source_url ?? "").trim()
+                ? "Add the original post link first."
+                : fromPost
+                  ? "Today, since you're importing it now. Change it if the post is older."
+                  : "When the original post went up. The card shows it as “Posted …”."}
             </span>
           </div>
         </div>

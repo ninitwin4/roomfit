@@ -1,9 +1,11 @@
 // roomfit — parse-post: read a room post pasted from Facebook and return only
 // what it literally says, for the team's "Import from post" form.
 //
-// Returns title, rent, neighborhood, pets_allowed and smoking_allowed, each as
+// Returns rent, neighborhood, pets_allowed and smoking_allowed, each as
 // { value, quote }: the value, and the exact words of the post it came from
-// (both null when the post doesn't say). Tidiness, social level and sleep
+// (both null when the post doesn't say). The title and description aren't
+// asked for: the app takes them straight from the post's own words (first
+// sentence, then the rest). Tidiness, social level and sleep
 // schedule are deliberately not in the output, so they can never be guessed:
 // the form keeps their defaults until the host claims the room.
 //
@@ -78,13 +80,8 @@ const field = (type: string, description: string) => ({
 const SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["title", "rent", "neighborhood", "pets_allowed", "smoking_allowed"],
+  required: ["rent", "neighborhood", "pets_allowed", "smoking_allowed"],
   properties: {
-    title: field(
-      "string",
-      "The post's own headline or opening line describing the room, under 80 " +
-        "characters, with emoji and prices removed. null if the post has no such line.",
-    ),
     rent: field(
       "integer",
       "Monthly rent for the room in US dollars, as a whole number. null if the post " +
@@ -204,14 +201,12 @@ Deno.serve(async (req) => {
   }
 
   const fields = {
-    title: grounded(parsed.title, post),
     rent: grounded(parsed.rent, post),
     neighborhood: grounded(parsed.neighborhood, post),
     pets_allowed: grounded(parsed.pets_allowed, post),
     smoking_allowed: grounded(parsed.smoking_allowed, post),
   };
   // Final type checks, so the form only ever gets what it expects.
-  if (typeof fields.title.value !== "string") fields.title = { value: null, quote: null };
   if (!Number.isInteger(fields.rent.value) || (fields.rent.value as number) <= 0) {
     fields.rent = { value: null, quote: null };
   }

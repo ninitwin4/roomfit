@@ -12,6 +12,7 @@ import {
   fetchIsTeamAccount,
   fetchLocations,
   parsePost,
+  DESCRIPTION_MAX,
   fetchLiveClaimLinks,
   createClaimLink,
   claimUrl,
@@ -203,8 +204,8 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
   if (importing) {
     return (
       <ImportPost
-        onParsed={(fields) => {
-          setDraft(draftFromPost(fields));
+        onParsed={(fields, text) => {
+          setDraft(draftFromPost(fields, text));
           setImporting(false);
           setEditing("new");
         }}
@@ -430,19 +431,45 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
 // what the post said is filled in; tidiness, social level and hours keep the
 // form's defaults until the host claims the room. The team runs these rooms
 // itself, so they go live on save (untick Active to keep one hidden).
-function draftFromPost(fields) {
+// The post's own words: the first sentence (or line) is the title, everything
+// after it the description. A first sentence too long for a card is cut, and
+// then the description keeps the whole post so nothing is lost.
+const TITLE_MAX = 100;
+function splitPost(text) {
+  const post = text.trim();
+  const end = post.search(/\n|[.!?](\s|$)/);
+  const first = (end === -1 ? post : post.slice(0, end + 1)).trim();
+  let title = first;
+  let rest = post.slice(first.length).trim();
+  if (first.length > TITLE_MAX) {
+    title = `${first.slice(0, first.lastIndexOf(" ", TITLE_MAX - 1)).trim() || first.slice(0, TITLE_MAX - 1)}…`;
+    rest = post;
+  }
+  const cut = rest.length > DESCRIPTION_MAX;
+  return {
+    title,
+    description: cut ? `${rest.slice(0, DESCRIPTION_MAX - 1)}…` : rest,
+    cut,
+  };
+}
+
+function draftFromPost(fields, text) {
   const value = (k, fallback) => fields?.[k]?.value ?? fallback;
+  const { title, description, cut } = splitPost(text);
   return {
     room: {
-      title: value("title", ""),
+      title,
+      description,
       rent: value("rent", 0),
       location: value("neighborhood", ""),
       pets_allowed: value("pets_allowed", false),
       smoking_allowed: value("smoking_allowed", false),
       active: true,
+      // You're importing it now; change it if the post is older.
+      posted_date: dateInput(new Date()),
     },
     fromPost: {
-      title: fields?.title?.quote ?? null,
+      description: description ? (cut ? "cut" : "rest") : null,
       rent: fields?.rent?.quote ?? null,
       location: fields?.neighborhood?.quote ?? null,
       pets_allowed: fields?.pets_allowed?.quote ?? null,
@@ -464,7 +491,7 @@ function ImportPost({ onParsed, onCancel }) {
       // The app's existing area names, so "SOMA" comes back as "SoMa".
       const areas = await fetchLocations().catch(() => []);
       const fields = await parsePost(text, areas);
-      onParsed(fields);
+      onParsed(fields, text);
     } catch (err) {
       setError(err.message);
       setBusy(false);
@@ -475,9 +502,10 @@ function ImportPost({ onParsed, onCancel }) {
     <div className="panel">
       <h2 className="form-title">Import from post</h2>
       <p className="hint">
-        Paste the text of a Facebook room post. Claude fills in only what it
-        says (title, rent, neighborhood, pets, smoking) and you check it all
-        before saving. The text is sent to Anthropic to be read.
+        Paste the text of a Facebook room post. Its first sentence becomes the
+        title and the rest the description. Claude fills in rent,
+        neighborhood, pets and smoking only where the post says them, and you
+        check it all before saving. The text is sent to Anthropic to be read.
       </p>
       <div className="field">
         <label htmlFor="post-text">Post text</label>

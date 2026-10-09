@@ -96,14 +96,16 @@ Don't relitigate these without being asked:
   ordinary messages (the team inbox is emailed, `22_team_message_alert.sql`),
   show "Room managed by RoomFit team", expire after 30 days, and carry the
   post's date ("Date posted" → `room_sources.posted_at` → `rooms.posted_at`).
-  The team account can also **Import from post**: `supabase/functions/parse-post`
-  sends the pasted text to Claude Haiku 5.5 (Anthropic's library, inside the
-  function only; key `ANTHROPIC_API_KEY` in Supabase secrets) and gets back
-  only title, rent, neighbourhood, pets and smoking, each with the words it
-  came from; a value whose words aren't in the post is dropped, and tidiness,
-  social and hours are never read from posts. Only callers whose login email is
-  on `team_recipients` get an answer, and nothing saves until the team checks
-  the form.
+  The team account can also **Import from post**: the app makes the post's
+  first sentence the title and the rest the description, word for word, and
+  dates it today. `supabase/functions/parse-post` sends the text to Claude
+  Haiku 5.5 (Anthropic's library, inside the function only; key
+  `ANTHROPIC_API_KEY` in Supabase secrets) and gets back only rent,
+  neighbourhood, pets and smoking, each with the words it came from; a value
+  whose words aren't in the post is dropped, and tidiness, social and hours
+  are never read from posts. Only callers whose login email is on
+  `team_recipients` get an answer, and nothing saves until the team checks the
+  form. Photos are copied from the post (Copy Image) and pasted into the form.
 - **Listings last 30 days.** `rooms.expires_at` is set by the database (30
   days from posting, and again from a claim), never by the app. A daily job
   (17:00 UTC) pauses expired listings and emails the owner; "Show again" on an
