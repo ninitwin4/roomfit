@@ -106,6 +106,16 @@ Don't relitigate these without being asked:
   are never read from posts. Only callers whose login email is on
   `team_recipients` get an answer, and nothing saves until the team checks the
   form. Photos are copied from the post (Copy Image) and pasted into the form.
+- **Shared rooms are opt-in.** An owner taps **Share** on a live listing, is
+  told what a visitor will see, and gets `app.joinroomfit.com/r/<id>`
+  (`rooms.shared`, off by default). Anyone can open it signed out: it shows the
+  room's facts and household with no fit score, and the sign-up form
+  underneath. The rooms table stays closed to visitors; the link reads one room
+  through `get_shared_room()` (`25_shared_rooms.sql`), which returns nothing
+  unless the room is shared, live and unexpired, never an unclaimed Craigslist
+  import, and never the owner's id, email or last name. A claim unshares the
+  room, so the new owner decides. `frontend/vercel.json` sends `/r/:id` to the
+  app.
 - **Listings last 30 days.** `rooms.expires_at` is set by the database (30
   days from posting, and again from a claim), never by the app. A daily job
   (17:00 UTC) pauses expired listings and emails the owner; "Show again" on an
@@ -196,6 +206,7 @@ backend/
   ranking.py           hard filters + 5-factor scoring + reason strings
   seed_rooms.json      12 seed rooms (source of truth for the seed SQL)
   main.py              /health, /rank
+frontend/vercel.json   /r/<id> → the app (Vercel rewrite)
 frontend/src/
   App.jsx              auth gate, tabs, match flow, favourites state
   api.js               backend URL, warmUp(), strips non-scored fields
@@ -209,7 +220,8 @@ frontend/src/
     InterestSheet.jsx  the "I'm interested" popup (note to the host)
     RoomForm.jsx       add / edit / claim a listing, photo upload, admin fields
     MyListings.jsx     your own rooms: edit, pause, delete; claim screen;
-                       admin claim links + share sheet
+                       admin claim links + share sheet; public Share sheet
+    SharedRoom.jsx     the public room page behind a /r/<id> link
     SavedRooms.jsx     saved rooms, re-ranked against your last search
     Messages.jsx       inbox + thread, owns its own back-and-forth; suggested
                        first replies for a room's owner
@@ -247,6 +259,7 @@ supabase/              run in numerical order
   22_team_message_alert.sql    email the team inbox on new messages to the team account
   23_remove_sample_listings.sql  remove the 12 ownerless sample rooms (ids 1–12)
   24_posted_at.sql             rooms.posted_at (post date or date added), set by the DB
+  25_shared_rooms.sql          rooms.shared + get_shared_room() for /r/<id> links
   undo/                one undo script per migration from 10 on
   functions/parse-post/index.ts  Edge Function: pasted post → fields
                        (Claude Haiku 5.5), team account only
@@ -320,7 +333,10 @@ landing/               landing page (separate Next.js project + its design hando
   description, Claude Haiku 5.5 (`parse-post`) fills in rent, neighbourhood,
   pets and smoking where the post states them, it's dated today, and photos
   paste in with Copy Image. Monthly spend limit set in the Anthropic Console.
-- ⬜ **Public shareable listings** — specced, not started (the last planned item)
+- ✅ **Public shareable listings** — LIVE (Oct 11). Owners share a live listing
+  from My listings and get a `/r/<id>` link anyone can open; signing up from it
+  lands back on the room, with Message. Next: link previews (the room's photo
+  in Facebook and WhatsApp), then owner social links.
 
 ## Working style
 

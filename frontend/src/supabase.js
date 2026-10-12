@@ -8,7 +8,7 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = createClient(url, anonKey);
 
 const ROOM_FIELDS =
-  "id, title, rent, location, description, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos, active, source, claimed_at, expires_at, posted_at";
+  "id, title, rent, location, description, cleanliness, social_level, sleep_schedule, pets_allowed, smoking_allowed, owner_id, photo_url, photos, active, source, claimed_at, expires_at, posted_at, shared";
 
 // A room copied from Craigslist whose host hasn't claimed it yet. Its owner_id
 // is the admin who imported it, so it takes "I'm interested" instead of a
@@ -195,6 +195,46 @@ export async function deleteRoom(id) {
 export async function setRoomActive(id, active) {
   const { error } = await supabase.from("rooms").update({ active }).eq("id", id);
   if (error) throw new Error(`Couldn't update the listing: ${error.message}`);
+}
+
+// --- Public room links (supabase/25_shared_rooms.sql) ---------------------------
+// A room its owner has shared opens for anyone at /r/<id>, signed in or not.
+// Only through get_shared_room(): signed out, the rooms table stays closed.
+export const SHARED_PATH = /^\/r\/(\d+)\/?$/;
+
+export function sharedRoomUrl(id) {
+  return `${window.location.origin}/r/${id}`;
+}
+
+// A live room can be shared, except a Craigslist copy whose host hasn't
+// claimed it: it isn't anyone's to share yet (the database agrees).
+export function canShare(room) {
+  return room?.active !== false && !awaitingHost(room);
+}
+
+export async function setRoomShared(id, shared) {
+  const { error } = await supabase.from("rooms").update({ shared }).eq("id", id);
+  if (error) throw new Error(`Couldn't change sharing: ${error.message}`);
+}
+
+// The room behind a /r/<id> link, or null when it isn't listed any more
+// (unshared, paused, expired or deleted). Has the owner's first name and
+// avatar, never their id.
+export async function fetchSharedRoom(id) {
+  const { data, error } = await supabase.rpc("get_shared_room", { p_id: id });
+  if (error) throw new Error(`Couldn't open this room: ${error.message}`);
+  return data?.[0] ?? null;
+}
+
+// Who to message about a shared room, once you're signed in.
+export async function fetchRoomOwnerId(id) {
+  const { data, error } = await supabase
+    .from("rooms")
+    .select("owner_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(`Couldn't load the room's owner: ${error.message}`);
+  return data?.owner_id ?? null;
 }
 
 // --- Facebook import (team account) -------------------------------------------

@@ -13,6 +13,9 @@ import {
   fetchLocations,
   parsePost,
   DESCRIPTION_MAX,
+  setRoomShared,
+  sharedRoomUrl,
+  canShare,
   fetchLiveClaimLinks,
   createClaimLink,
   claimUrl,
@@ -65,6 +68,7 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
   const [links, setLinks] = useState(() => new Map()); // roomId -> live link
   const [sharing, setSharing] = useState(null); // room whose share sheet is open
   const [shareError, setShareError] = useState(null);
+  const [publicShare, setPublicShare] = useState(null); // room whose public link sheet is open
 
   async function load() {
     setLoading(true);
@@ -186,6 +190,13 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
     }
   }
 
+  // Sharing is the owner's choice, made in the sheet (supabase/25_shared_rooms.sql).
+  async function changeSharing(room, shared) {
+    await setRoomShared(room.id, shared);
+    setRooms((prev) => prev.map((r) => (r.id === room.id ? { ...r, shared } : r)));
+    setPublicShare((open) => (open?.id === room.id ? { ...open, shared } : open));
+  }
+
   function finishClaim(result) {
     if (result === "claimed") {
       setNotice({
@@ -243,6 +254,14 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
           error={shareError}
           onReplace={() => replaceLink(sharing)}
           onClose={() => setSharing(null)}
+        />
+      )}
+
+      {publicShare && (
+        <PublicShareSheet
+          room={publicShare}
+          onChange={(shared) => changeSharing(publicShare, shared)}
+          onClose={() => setPublicShare(null)}
         />
       )}
 
@@ -387,6 +406,15 @@ export default function MyListings({ isAdmin = false, claimToken = null, onClaim
                         : "Show again"
                       : "Pause listing"}
                   </button>
+                  {(room.shared || canShare(room)) && (
+                    <button
+                      type="button"
+                      className="linkish"
+                      onClick={() => setPublicShare(room)}
+                    >
+                      {room.shared ? "Shared ✓" : "Share"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="linkish danger"
@@ -590,6 +618,121 @@ function ClaimListing({ token, onDone }) {
       saving={saving}
       error={error}
     />
+  );
+}
+
+// The room's public link (/r/<id>). Sharing is off until the owner turns it on
+// here, after being told what a visitor will see.
+function PublicShareSheet({ room, onChange, onClose }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [confirmStop, setConfirmStop] = useState(false);
+  const url = sharedRoomUrl(room.id);
+
+  async function change(shared) {
+    setBusy(true);
+    setError(null);
+    try {
+      await onChange(shared);
+      setConfirmStop(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Share ${room.title}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sheet-head">
+          <button type="button" className="sheet-close" aria-label="Close" onClick={onClose}>
+            ✕
+          </button>
+          <span className="sheet-title share-title">Share “{room.title}”</span>
+          <span className="sheet-spacer" aria-hidden="true" />
+        </div>
+
+        <div className="sheet-body">
+          {room.shared ? (
+            <div className="field">
+              <span className="field-label">Anyone with this link can see the room</span>
+              <CopyRow value={url} openable />
+              <span className="hint share-meta">
+                {canShare(room)
+                  ? "Post it anywhere. People sign up to message you."
+                  : "This listing isn't live, so the link says it isn't listed any more."}
+              </span>
+            </div>
+          ) : (
+            <p className="hint">
+              Anyone with the link will see this room's photos, rent, area,
+              description and household, and your first name. They'll need an
+              account to message you. You can stop sharing at any time.
+            </p>
+          )}
+
+          {error && <p className="auth-error">{error}</p>}
+
+          <div className="share-foot">
+            {!room.shared ? (
+              <>
+                <button
+                  type="button"
+                  className="submit"
+                  disabled={busy}
+                  onClick={() => change(true)}
+                >
+                  {busy ? "Sharing…" : "Share this room"}
+                </button>
+                <button type="button" className="linkish share-close" onClick={onClose}>
+                  Cancel
+                </button>
+              </>
+            ) : confirmStop ? (
+              <>
+                <span className="confirm-q">The link will stop working.</span>
+                <button
+                  type="button"
+                  className="linkish danger"
+                  disabled={busy}
+                  onClick={() => change(false)}
+                >
+                  {busy ? "Stopping…" : "Stop sharing"}
+                </button>
+                <button type="button" className="linkish" onClick={() => setConfirmStop(false)}>
+                  Keep
+                </button>
+              </>
+            ) : (
+              <>
+                {navigator.share && (
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => navigator.share({ title: room.title, url }).catch(() => {})}
+                  >
+                    Share to…
+                  </button>
+                )}
+                <button type="button" className="linkish" onClick={() => setConfirmStop(true)}>
+                  Stop sharing
+                </button>
+                <button type="button" className="linkish share-close" onClick={onClose}>
+                  Close
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

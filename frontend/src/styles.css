@@ -1794,3 +1794,36 @@ input[type="password"] {
 .peek:hover {
   color: var(--accent);
 }
+
+/* A shared room (/r/<id>): the room, then who lives there, then the post. */
+.shared-room {
+  margin-bottom: 18px;
+}
+
+.shared-label {
+  margin: 16px 0 0;
+  font-family: var(--ui);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.shared-room .listing-traits {
+  margin-top: 4px;
+}
+
+.shared-cta {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 24px;
+}
+
+.share-foot .submit {
+  width: auto;
+  padding: 10px 18px;
+  font-size: 15px;
+}
+
+.shared-gone {
+  margin-bottom: 18px;
+}

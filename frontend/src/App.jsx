@@ -10,6 +10,7 @@ import ProfileEditor from "./components/ProfileEditor.jsx";
 import Avatar from "./components/Avatar.jsx";
 import Messages from "./components/Messages.jsx";
 import InterestSheet from "./components/InterestSheet.jsx";
+import SharedRoom from "./components/SharedRoom.jsx";
 import { rankRooms, warmUp } from "./api.js";
 import {
   supabase,
@@ -22,6 +23,7 @@ import {
   fetchProfilesByIds,
   displayName,
   CLAIM_PARAM,
+  SHARED_PATH,
 } from "./supabase.js";
 
 // A claim link is /?claim=<token>. The token has to survive sign-up and the
@@ -76,11 +78,17 @@ function readStartView() {
 
 const START_VIEW = readStartView();
 
+// A shared room is /r/<id> (supabase/25_shared_rooms.sql). The address stays
+// as it is through sign-up and the name step, so the room is still there
+// afterwards; leaving the room takes it out.
+const SHARED_ROOM_ID = window.location.pathname.match(SHARED_PATH)?.[1] ?? null;
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [claimToken, setClaimToken] = useState(readClaimToken);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [view, setView] = useState(START_VIEW); // "find" | "saved" | "messages" | "listings"
+  const [sharedId, setSharedId] = useState(SHARED_ROOM_ID); // the /r/<id> room on screen
   const [savedIds, setSavedIds] = useState(() => new Set());
   const [interestIds, setInterestIds] = useState(() => new Set());
   const [interestRoom, setInterestRoom] = useState(null); // the open "I'm interested" sheet
@@ -191,16 +199,29 @@ export default function App() {
   // Tapping the wordmark returns to the start of the match flow — the same
   // place "Change preferences" goes, so the logo behaves like a home button.
   function goHome() {
-    setView("find");
+    go("find");
     setData(null);
     setError(null);
+  }
+
+  // Every way out of a shared room goes through here, so the room and its
+  // address go together.
+  function leaveSharedRoom() {
+    if (!sharedId) return;
+    setSharedId(null);
+    window.history.replaceState(null, "", "/" + window.location.search + window.location.hash);
+  }
+
+  function go(next) {
+    leaveSharedRoom();
+    setView(next);
   }
 
   // "Message" on a room card is the one cross-view jump: hand the thread to
   // the Messages tab and switch to it.
   function handleMessage(room) {
     setOpenThread({ roomId: room.id, otherId: room.owner_id, room });
-    setView("messages");
+    go("messages");
   }
 
   // Optimistic: flip the heart immediately, roll back only if the write fails.
@@ -322,7 +343,8 @@ export default function App() {
         />
       )}
 
-      {!checkingAuth && !session ? (
+      {/* A shared room is its own pitch, so it gets the small masthead. */}
+      {!checkingAuth && !session && !sharedId ? (
         <header className="hero">
           <p className="hero-eyebrow">roomfit</p>
           {/* The eyebrow above already says roomfit, so the headline is free to
@@ -401,7 +423,14 @@ export default function App() {
       {checkingAuth ? null : recovering ? (
         <ResetPassword onDone={() => setRecovering(false)} />
       ) : !session ? (
-        <Auth claiming={!!claimToken} />
+        sharedId ? (
+          <>
+            <SharedRoom id={sharedId} onLeave={leaveSharedRoom} />
+            <Auth signupFirst />
+          </>
+        ) : (
+          <Auth claiming={!!claimToken} />
+        )
       ) : needsName ? (
         <NameStep onDone={(p) => setProfile(p)} />
       ) : (
@@ -409,35 +438,42 @@ export default function App() {
           <nav className="tabs">
             <button
               type="button"
-              className={view === "find" ? "tab active" : "tab"}
-              onClick={() => setView("find")}
+              className={!sharedId && view === "find" ? "tab active" : "tab"}
+              onClick={() => go("find")}
             >
               Find
             </button>
             <button
               type="button"
-              className={view === "saved" ? "tab active" : "tab"}
-              onClick={() => setView("saved")}
+              className={!sharedId && view === "saved" ? "tab active" : "tab"}
+              onClick={() => go("saved")}
             >
               Saved{savedIds.size > 0 ? ` (${savedIds.size})` : ""}
             </button>
             <button
               type="button"
-              className={view === "messages" ? "tab active" : "tab"}
-              onClick={() => setView("messages")}
+              className={!sharedId && view === "messages" ? "tab active" : "tab"}
+              onClick={() => go("messages")}
             >
               Inbox{unread > 0 ? ` (${unread})` : ""}
             </button>
             <button
               type="button"
-              className={view === "listings" ? "tab active" : "tab"}
-              onClick={() => setView("listings")}
+              className={!sharedId && view === "listings" ? "tab active" : "tab"}
+              onClick={() => go("listings")}
             >
               Listings
             </button>
           </nav>
 
-          {view === "messages" ? (
+          {sharedId ? (
+            <SharedRoom
+              id={sharedId}
+              me={session.user.id}
+              onMessage={handleMessage}
+              onLeave={() => go("find")}
+            />
+          ) : view === "messages" ? (
             <Messages
               me={session.user.id}
               openThread={openThread}

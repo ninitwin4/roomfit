@@ -60,8 +60,9 @@ function Gauge({ score, hero }) {
 }
 
 // Swipeable photo strip. CSS scroll-snap does the swiping; the only JS here is
-// tracking which photo is centred so the dots can follow it.
-function Gallery({ photos }) {
+// tracking which photo is centred so the dots can follow it. Also the shared
+// room page's gallery.
+export function Gallery({ photos }) {
   const [at, setAt] = useState(0);
 
   if (photos.length === 0) {

@@ -8,9 +8,9 @@ const RESET_REDIRECT = `${window.location.origin}/`;
 
 // `claiming` is true when they arrived through a claim link. Most of those
 // people are new, so the form opens on "Create account" — with sign in one tap
-// away for anyone who already has one.
-export default function Auth({ claiming = false }) {
-  const [mode, setMode] = useState(claiming ? "signup" : "signin"); // "signin" | "signup" | "forgot"
+// away for anyone who already has one. So does someone opening a shared room.
+export default function Auth({ claiming = false, signupFirst = claiming }) {
+  const [mode, setMode] = useState(signupFirst ? "signup" : "signin"); // "signin" | "signup" | "forgot"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
