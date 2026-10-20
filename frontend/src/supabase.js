@@ -197,6 +197,18 @@ export async function setRoomActive(id, active) {
   if (error) throw new Error(`Couldn't update the listing: ${error.message}`);
 }
 
+// --- Active users (supabase/26_user_activity.sql) -------------------------------
+// Marks today as a day this person opened the app. The database keeps one row
+// per person per day and nothing else. Never throws: counting visits must
+// never get in anyone's way.
+export async function recordVisit() {
+  try {
+    await supabase.rpc("record_visit");
+  } catch {
+    /* offline or not migrated yet: skip today's count */
+  }
+}
+
 // --- Public room links (supabase/25_shared_rooms.sql) ---------------------------
 // A room its owner has shared opens for anyone at /r/<id>, signed in or not.
 // Only through get_shared_room(): signed out, the rooms table stays closed.

@@ -24,6 +24,7 @@ import {
   displayName,
   CLAIM_PARAM,
   SHARED_PATH,
+  recordVisit,
 } from "./supabase.js";
 
 // A claim link is /?claim=<token>. The token has to survive sign-up and the
@@ -151,6 +152,23 @@ export default function App() {
 
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Count today as a day this person used the app: once when it opens, and
+  // again when a tab left open comes back into view on a later day.
+  const userId = session?.user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    let counted = null;
+    function visit() {
+      const today = new Date().toDateString();
+      if (document.visibilityState !== "visible" || today === counted) return;
+      counted = today;
+      recordVisit();
+    }
+    visit();
+    document.addEventListener("visibilitychange", visit);
+    return () => document.removeEventListener("visibilitychange", visit);
+  }, [userId]);
 
   // Which rooms this user has saved. Fails soft: saving is an enhancement, and
   // a problem loading it should never block matching.

@@ -260,6 +260,8 @@ supabase/              run in numerical order
   23_remove_sample_listings.sql  remove the 12 ownerless sample rooms (ids 1–12)
   24_posted_at.sql             rooms.posted_at (post date or date added), set by the DB
   25_shared_rooms.sql          rooms.shared + get_shared_room() for /r/<id> links
+  26_user_activity.sql         one row per person per day the app is opened
+                               (record_visit()); active-user queries at the end
   undo/                one undo script per migration from 10 on
   functions/parse-post/index.ts  Edge Function: pasted post → fields
                        (Claude Haiku 5.5), team account only
