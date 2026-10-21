@@ -322,8 +322,25 @@ async function main() {
   const known = new Set(
     candidates.length ? await rpc("known_external_ids", { p_ids: candidates.map((c) => c.key) }) : []
   );
-  const fresh = candidates.filter((c) => !known.has(c.key));
   if (known.size) skipped["already in RoomFit"] = known.size;
+
+  // Hosts repost the same ad every few days under a new post key. A post with
+  // the same title, rent and area as a room we already have (live or hidden) is
+  // a repost, and so is a second copy inside this scrape.
+  const sameAd = (r) => `${r.title.trim().toLowerCase()}|${r.rent}|${r.location}`;
+  const haveAds = new Set(
+    (await supabase("/rest/v1/rooms?select=title,rent,location&limit=10000")).map(sameAd)
+  );
+  const fresh = [];
+  for (const c of candidates) {
+    if (known.has(c.key)) continue;
+    if (haveAds.has(sameAd(c.room))) {
+      skipped["repost of a room in RoomFit"] = (skipped["repost of a room in RoomFit"] ?? 0) + 1;
+      continue;
+    }
+    haveAds.add(sameAd(c.room));
+    fresh.push(c);
+  }
 
   let imported = 0;
   let failed = 0;
@@ -395,10 +412,30 @@ function need(name) {
 
 export { toListing };
 
+// A run that stops (most often: no network yet when the Mac wakes at 9:00) is
+// tried again 2 hours later, at most 3 times. Re-running is safe: posts already
+// in RoomFit are skipped by their post key.
+const RETRIES = 3;
+const RETRY_AFTER_MS = 2 * 60 * 60 * 1000;
+
+async function runWithRetries() {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await main();
+      return;
+    } catch (err) {
+      if (attempt >= RETRIES || DRY_RUN) {
+        log(`Import stopped: ${err.message}${attempt ? ` (after ${attempt} retries)` : ""}`);
+        process.exitCode = 1;
+        return;
+      }
+      log(`Import stopped: ${err.message}. Retry ${attempt + 1} of ${RETRIES} in 2 hours.`);
+      await new Promise((r) => setTimeout(r, RETRY_AFTER_MS));
+    }
+  }
+}
+
 // Run only when executed, so the parser can be imported and tested on its own.
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main().catch((err) => {
-    log(`Import stopped: ${err.message}`);
-    process.exitCode = 1;
-  });
+  runWithRetries();
 }

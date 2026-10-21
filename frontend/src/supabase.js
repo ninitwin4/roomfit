@@ -533,6 +533,18 @@ export async function fetchHiddenThreads() {
   );
 }
 
+// Stamps read_at on the messages in this thread that were sent to you, so the
+// team can see a message was read (27_message_emails.sql). Best effort: the
+// app's own unread dots still come from localStorage, so a failure here
+// changes nothing on screen.
+export async function markThreadRead(roomId, otherId) {
+  const { error } = await supabase.rpc("mark_thread_read", {
+    p_room_id: roomId,
+    p_other_id: otherId,
+  });
+  if (error) console.warn(`Couldn't mark the thread read: ${error.message}`);
+}
+
 export async function hideThread(roomId, otherId) {
   const uid = await currentUserId();
   const { data, error } = await supabase

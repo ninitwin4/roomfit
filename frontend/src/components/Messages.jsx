@@ -6,6 +6,7 @@ import {
   fetchProfilesByIds,
   fetchHiddenThreads,
   hideThread,
+  markThreadRead,
   displayName,
 } from "../supabase.js";
 import { markRead, isUnread } from "../unread.js";
@@ -218,6 +219,7 @@ function Thread({ me, roomId, otherId, room, person, onBack }) {
       const list = await fetchThread(roomId, otherId);
       setMessages(list);
       markRead(`${roomId}:${otherId}`);
+      markThreadRead(roomId, otherId);
     } catch (err) {
       setError(err.message);
       setMessages([]);
