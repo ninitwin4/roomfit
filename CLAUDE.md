@@ -328,12 +328,16 @@ landing/               landing page (separate Next.js project + its design hando
 - ✅ **Landing page** — LIVE on joinroomfit.com (www redirects to it), its own
   Vercel project (`roomfit-landing`) deploying `landing/` from `main`. Waitlist
   sign-ups land in the `waitlist` table, verified with a real sign-up.
-- ✅ **Craigslist import + "I'm interested"** — LIVE (PRs #4, #5). Migrations
-  15–20 are on the live database. 99 imported rooms are live (Oct 6); 28 have
-  a reply address. Team alerts go to the team inbox (`team_recipients`). The email bot is
-  stopped; the daily import isn't scheduled yet. Open from Nini's review: the
-  bot's database access, double sends on a slow mailer, note spam, the
-  CAN-SPAM footer and opt-out, and Craigslist's terms.
+- ✅ **Craigslist import + "I'm interested"** — LIVE (PRs #4–#7). Migrations
+  15–20 and 27 are on the live database. The daily import runs (an import
+  every day the week of Oct 15); on Oct 22, 208 Craigslist rooms are live and
+  23 hidden, and since PR #7 reposts of a room already in RoomFit are skipped.
+  28 have a reply address. Team alerts go to the team inbox
+  (`team_recipients`). The email bot is stopped (last ran Oct 7). Open from
+  Nini's review: the bot's database access, double sends on a slow mailer,
+  note spam, the CAN-SPAM footer and opt-out, and Craigslist's terms. Open
+  from PR #7: line breaks in names and titles reaching email subjects, and the
+  repost check's 1,000-row cap.
 - ✅ **Facebook import** — LIVE (Oct 8). Signed in as the team account, paste
   a Facebook post: its first sentence becomes the title and the rest the
   description, Claude Haiku 5.5 (`parse-post`) fills in rent, neighbourhood,
