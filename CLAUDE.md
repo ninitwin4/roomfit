@@ -230,7 +230,7 @@ frontend/src/
     NameStep.jsx       one-time "enter your name" after signup
     ResetPassword.jsx  set a new password after a reset link
     Scale.jsx          shared 1–5 slider with value bubble
-  unread.js            localStorage unread tracking (and why it's not read_at)
+  unread.js            localStorage unread dots (and why reads go through mark_thread_read)
   styles.css           design tokens at the top
 supabase/              run in numerical order
   01_schema.sql        rooms table + RLS policies
@@ -261,6 +261,8 @@ supabase/              run in numerical order
   24_posted_at.sql             rooms.posted_at (post date or date added), set by the DB
   25_shared_rooms.sql          rooms.shared + get_shared_room() for /r/<id> links
   26_user_activity.sql         one row per person per day the app is opened
+  27_message_emails.sql        read_at via mark_thread_read(); one email per new message
+                               (per conversation, every 6 hours)
                                (record_visit()); active-user queries at the end
   undo/                one undo script per migration from 10 on
   functions/parse-post/index.ts  Edge Function: pasted post → fields
@@ -311,7 +313,9 @@ landing/               landing page (separate Next.js project + its design hando
   and shown instead of the email; avatar is a photo or initials on a palette
   colour, edited by tapping your name in the header.
 - ✅ **In-app messaging** — Inbox tab, threads keyed by (room, other person),
-  immutable messages, unread in `localStorage`. Room cards show the owner's
+  immutable messages, unread dots in `localStorage`; opening a thread stamps
+  `read_at` and a new message emails its recipient (migration 27, on the live
+  database Oct 20). Room cards show the owner's
   avatar + first name and a Message button; seed rooms read "Sample listing"
   and aren't messageable.
 - ✅ **Admin role + claimable listings** — LIVE. Admins add hidden listings

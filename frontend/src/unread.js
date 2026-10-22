@@ -6,9 +6,12 @@
 // avoids that entirely.
 //
 // Honest trade-off: unread state doesn't follow you across devices, and
-// clearing site data marks everything unread again. The messages table already
-// has a read_at column reserved, so upgrading later is a policy change rather
-// than a migration.
+// clearing site data marks everything unread again.
+//
+// The server does record reads now, for the team: opening a thread also calls
+// mark_thread_read() (27_message_emails.sql), a function that can only stamp
+// read_at on messages sent to you — still no UPDATE policy. The dots below
+// still come from this device.
 
 const KEY = (threadKey) => `roomfit:lastRead:${threadKey}`;
 
